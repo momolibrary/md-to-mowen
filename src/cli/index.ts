@@ -185,7 +185,7 @@ program
 
       if (!result.dryRun && result.noteId) {
         upsertNote(metaStore, absInput, result.noteId);
-        writeMetadata(metaPath, metaStore);
+        await writeMetadata(metaPath, metaStore);
       }
 
       if (!result.dryRun) {
