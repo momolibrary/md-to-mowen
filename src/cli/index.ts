@@ -17,6 +17,11 @@ import { loadConfig, type MdToMowenConfig } from '../shared/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// 从 package.json 读取版本号
+const packageJsonPath = join(__dirname, '../../package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const VERSION = packageJson.version;
+
 // ── 配置文件搜索路径 ──────────────────────────────────────────────────────────
 
 interface ConfigLocation {
@@ -112,7 +117,7 @@ loadEnvConfig();
 
 const program = new Command();
 
-program.name('md-to-mowen').description('将 Markdown（GFM）转换为墨问笔记').version('0.0.0');
+program.name('md-to-mowen').description('将 Markdown（GFM）转换为墨问笔记').version(VERSION);
 
 // ── config ────────────────────────────────────────────────────────────────────
 
