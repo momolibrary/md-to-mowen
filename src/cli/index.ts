@@ -6,7 +6,9 @@ import { fileURLToPath } from 'url';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { homedir } from 'os';
 import { createInterface } from 'readline';
+import { lstat } from 'fs/promises';
 import { processFile } from '../publish/process-file.js';
+import { processDirectory } from '../publish/process-directory.js';
 import { MowenClient } from '../mowen/client.js';
 import { noteAtomToMast } from '../noteatom/to-mast.js';
 import { mastToMarkdown } from '../mast/to-markdown.js';
@@ -138,12 +140,13 @@ program
 program
   .command('publish')
   .description('发布 Markdown 文件为墨问笔记')
-  .requiredOption('-i, --input <file>', 'Markdown 文件路径')
+  .requiredOption('-i, --input <path>', 'Markdown 文件路径或目录')
   .option('--note-id <id>', '已有笔记 ID（编辑模式，全量替换）')
   .option('--tags <tags>', '标签，逗号分隔（如 "tech,ai"）')
   .option('--auto-publish', '自动发布（非草稿）', false)
   .option('--dry-run', '走完流水线但不调用墨问 API，仅打印统计', false)
   .option('--cache-dir <dir>', '保存各阶段产物的目录（调试用）', 'out/pipeline-cache')
+  .option('--no-recursive', '批量发布时不递归扫描子目录', false)
   .action(async (opts) => {
     const apiKey = getApiKey();
     if (!apiKey && !opts.dryRun) {
@@ -158,43 +161,71 @@ program
 
     const client = new MowenClient(apiKey ?? 'dry-run-placeholder');
     const tags = opts.tags ? (opts.tags as string).split(',').map((t: string) => t.trim()) : undefined;
-
-    // ── 元数据：自动查找已有 noteId ──────────────────────────────────────────────
     const absInput = resolve(opts.input);
-    const metaPath = findMetadataPath();
-    const metaStore = readMetadata(metaPath);
 
-    let noteId: string | undefined = opts.noteId;
-
-    if (!noteId && !opts.dryRun) {
-      const existing = lookupNote(metaStore, absInput);
-      if (existing) {
-        noteId = existing.noteId;
-        console.log(`  找到已有笔记映射，进入编辑模式：${noteId}`);
-      }
-    }
-
+    // ── 检测 input 类型 ───────────────────────────────────────────────────────
     try {
-      const result = await processFile(opts.input, client, {
-        ...(noteId ? { noteId } : {}),
-        ...(tags ? { tags } : {}),
-        autoPublish: opts.autoPublish,
-        dryRun: opts.dryRun,
-        ...(opts.cacheDir ? { cacheDir: opts.cacheDir } : {}),
-      });
+      const inputStat = await lstat(absInput);
 
-      if (!result.dryRun && result.noteId) {
-        upsertNote(metaStore, absInput, result.noteId);
-        await writeMetadata(metaPath, metaStore);
-      }
+      if (inputStat.isDirectory()) {
+        // 目录：批量处理
+        const result = await processDirectory(opts.input, client, {
+          ...(tags ? { tags } : {}),
+          autoPublish: opts.autoPublish,
+          dryRun: opts.dryRun,
+          ...(opts.cacheDir ? { cacheDir: opts.cacheDir } : {}),
+          recursive: !opts.noRecursive,
+        });
 
-      if (!result.dryRun) {
-        console.log(`\n✅ 发布成功`);
-        console.log(`   笔记 ID：${result.noteId}`);
-        console.log(`   访问地址：${result.noteUrl}\n`);
+        // 批量模式下，有失败则 exit 1
+        if (result.failed > 0) {
+          process.exit(1);
+        }
+      } else if (inputStat.isFile()) {
+        // 单文件：现有逻辑
+        const metaPath = findMetadataPath();
+        const metaStore = readMetadata(metaPath);
+
+        let noteId: string | undefined = opts.noteId;
+
+        if (!noteId && !opts.dryRun) {
+          const existing = lookupNote(metaStore, absInput);
+          if (existing) {
+            noteId = existing.noteId;
+            console.log(`  找到已有笔记映射，进入编辑模式：${noteId}`);
+          }
+        }
+
+        try {
+          const result = await processFile(opts.input, client, {
+            ...(noteId ? { noteId } : {}),
+            ...(tags ? { tags } : {}),
+            autoPublish: opts.autoPublish,
+            dryRun: opts.dryRun,
+            ...(opts.cacheDir ? { cacheDir: opts.cacheDir } : {}),
+          });
+
+          if (!result.dryRun && result.noteId) {
+            upsertNote(metaStore, absInput, result.noteId);
+            await writeMetadata(metaPath, metaStore);
+          }
+
+          if (!result.dryRun) {
+            console.log(`\n✅ 发布成功`);
+            console.log(`   笔记 ID：${result.noteId}`);
+            console.log(`   访问地址：${result.noteUrl}\n`);
+          }
+        } catch (err) {
+          console.error('发布失败：', err instanceof Error ? err.message : err);
+          process.exit(1);
+        }
+      } else {
+        console.error(`错误：路径不存在 ${absInput}`);
+        process.exit(1);
       }
     } catch (err) {
-      console.error('发布失败：', err instanceof Error ? err.message : err);
+      // lstat 抛错（如路径不存在）
+      console.error('错误：', err instanceof Error ? err.message : err);
       process.exit(1);
     }
   });
