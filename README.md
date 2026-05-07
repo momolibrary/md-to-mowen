@@ -133,7 +133,7 @@ md-to-mowen/
 │   ├── publish/                # 发布流水线编排
 │   └── shared/                 # 工具函数
 ├── tests/                      # 单元测试
-└── docs/                       # 架构文档
+└── docs/                       # 学习指南与架构文档
 ```
 
 ## 开发
@@ -158,7 +158,7 @@ npm link
 ## 相关链接
 
 - [墨问开放 API 文档](https://mowen.apifox.cn/)
-- [架构设计文档](docs/CONCEPT.md)
+- [学习指南与架构文档](docs/README.md)
 
 ## License
 
