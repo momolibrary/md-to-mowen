@@ -374,4 +374,45 @@ program
     }
   });
 
+// ── status ───────────────────────────────────────────────────────────────────
+
+program
+  .command('status')
+  .description('查看已发布笔记的状态')
+  .option('-i, --input <path>', '查看指定文件的发布状态')
+  .option('--json', '输出 JSON 格式')
+  .action(async (opts) => {
+    const metaPath = findMetadataPath();
+    const metaStore = readMetadata(metaPath);
+    const cwd = process.cwd();
+
+    if (opts.input) {
+      // 单文件查询
+      const { lookupFileStatus, formatStatusTable, formatStatusJson } = await import('./status.js');
+      const absInput = resolve(opts.input);
+      const entry = lookupFileStatus(metaStore, absInput, cwd);
+
+      if (!entry) {
+        console.error(`未发布：${opts.input}（元数据中无记录）`);
+        process.exit(1);
+      }
+
+      if (opts.json) {
+        console.log(formatStatusJson([entry]));
+      } else {
+        console.log(formatStatusTable([entry]));
+      }
+    } else {
+      // 列出所有
+      const { listAllNotes, formatStatusTable, formatStatusJson } = await import('./status.js');
+      const entries = listAllNotes(metaStore, cwd);
+
+      if (opts.json) {
+        console.log(formatStatusJson(entries));
+      } else {
+        console.log(formatStatusTable(entries));
+      }
+    }
+  });
+
 program.parse();
