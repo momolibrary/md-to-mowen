@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { resolve, dirname } from 'path';
 import { mdToHast } from '../pipeline/md-to-hast.js';
-import { hastToMast } from '../pipeline/hast-to-mast.js';
+import { hastToMast, type ConversionWarning } from '../pipeline/hast-to-mast.js';
 import { processAssets } from './asset-adapter.js';
 import { mastToNoteAtom } from '../noteatom/from-mast.js';
 import type { MowenClient } from '../mowen/client.js';
@@ -21,6 +21,8 @@ export interface PublishOptions {
   cacheDir?: string;
   /** 代码块样式：paragraph（转为段落）或 codeblock（转为代码块节点） */
   codeBlockStyle?: 'paragraph' | 'codeblock';
+  /** 静默模式：抑制有损转换警告 */
+  quiet?: boolean;
 }
 
 export interface PublishResult {
@@ -30,6 +32,7 @@ export interface PublishResult {
   noteUrl?: string;
   dryRun: boolean;
   stats: PipelineStats;
+  warnings: ConversionWarning[];
 }
 
 export interface PipelineStats {
@@ -52,7 +55,7 @@ export async function processFile(
   client: MowenClient,
   opts: PublishOptions = {},
 ): Promise<PublishResult> {
-  const { noteId, tags, autoPublish = false, dryRun = false, cacheDir, codeBlockStyle } = opts;
+  const { noteId, tags, autoPublish = false, dryRun = false, cacheDir, codeBlockStyle, quiet = false } = opts;
 
   // ── 阶段 00：读取文件 ────────────────────────────────────────────────────────
   const absPath = resolve(filePath);
@@ -64,8 +67,15 @@ export async function processFile(
   await writeCache(cacheDir, '01-hast.json', hast);
 
   // ── 阶段 02：HAST → MAST ─────────────────────────────────────────────────────
-  const mast = hastToMast(hast, codeBlockStyle ? { codeBlockStyle } : {});
+  const { doc: mast, warnings } = hastToMast(hast, codeBlockStyle ? { codeBlockStyle } : {});
   await writeCache(cacheDir, '02-mast.json', mast);
+
+  // ── 有损转换警告 ───────────────────────────────────────────────────────────
+  if (!quiet && warnings.length > 0) {
+    for (const w of warnings) {
+      console.warn(`⚠️ ${w.message}`);
+    }
+  }
 
   // ── 阶段 03：资源处理 ────────────────────────────────────────────────────────
   await processAssets(mast, client, { baseDir, dryRun });
@@ -80,8 +90,8 @@ export async function processFile(
 
   // ── dry-run：打印报告，不调用 API ────────────────────────────────────────────
   if (dryRun) {
-    printDryRunReport(filePath, stats, noteAtom);
-    return { dryRun: true, stats };
+    printDryRunReport(filePath, stats, noteAtom, warnings);
+    return { dryRun: true, stats, warnings };
   }
 
   // ── 阶段 05：发布 ────────────────────────────────────────────────────────────
@@ -94,7 +104,7 @@ export async function processFile(
   }
 
   const noteUrl = `https://mowen.cn/note/${resultNoteId}`;
-  return { noteId: resultNoteId, noteUrl, dryRun: false, stats };
+  return { noteId: resultNoteId, noteUrl, dryRun: false, stats, warnings };
 }
 
 // ── 统计 ──────────────────────────────────────────────────────────────────────
@@ -131,7 +141,12 @@ function collectStats(mast: MASTDocument, dryRun: boolean): PipelineStats {
 
 // ── dry-run 报告 ──────────────────────────────────────────────────────────────
 
-function printDryRunReport(filePath: string, stats: PipelineStats, noteAtom: NoteAtomDoc): void {
+function printDryRunReport(
+  filePath: string,
+  stats: PipelineStats,
+  noteAtom: NoteAtomDoc,
+  warnings: ConversionWarning[],
+): void {
   console.log('\n── dry-run 报告 ──────────────────────────────────────────');
   console.log(`文件：${filePath}`);
   console.log(`\n流水线统计：`);
@@ -143,6 +158,14 @@ function printDryRunReport(filePath: string, stats: PipelineStats, noteAtom: Not
   console.log(`  代码块：    ${stats.codeblocks}`);
   console.log(`  总块数：    ${stats.totalBlocks}`);
   console.log(`  待上传资源：${stats.images + stats.tables + stats.audios}（dry-run 跳过）`);
+
+  if (warnings.length > 0) {
+    console.log(`\n有损转换警告（${warnings.length} 处）：`);
+    for (const w of warnings) {
+      console.log(`  ⚠️ ${w.message}`);
+    }
+  }
+
   console.log(`\nNoteAtom 预览（前 3 个块）：`);
   const preview = noteAtom.content.slice(0, 3);
   console.log(JSON.stringify(preview, null, 2));

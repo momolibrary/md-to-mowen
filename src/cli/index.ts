@@ -241,6 +241,7 @@ program
             dryRun: opts.dryRun,
             cacheDir: resolvedConfig.cacheDir,
             codeBlockStyle: resolvedConfig.codeBlockStyle,
+            quiet: opts.quiet,
           });
 
           if (!result.dryRun && result.noteId) {

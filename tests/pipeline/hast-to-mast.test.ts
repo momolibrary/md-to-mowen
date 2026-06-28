@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mdToHast } from '../../src/pipeline/md-to-hast.js';
-import { hastToMast, _resetIdCounter } from '../../src/pipeline/hast-to-mast.js';
+import { hastToMast, _resetIdCounter, type ConversionWarning } from '../../src/pipeline/hast-to-mast.js';
 import type {
   MASTDocument,
   MASTParagraphBlock,
@@ -12,12 +12,17 @@ import type {
 
 // 辅助：将 markdown 直接转为 MAST
 function parse(md: string): MASTDocument {
-  return hastToMast(mdToHast(md));
+  return hastToMast(mdToHast(md)).doc;
 }
 
 // 辅助：将 markdown 转为 MAST，带选项
 function parseWithOptions(md: string, opts: { codeBlockStyle?: 'paragraph' | 'codeblock' }): MASTDocument {
-  return hastToMast(mdToHast(md), opts);
+  return hastToMast(mdToHast(md), opts).doc;
+}
+
+// 辅助：获取转换警告
+function getWarnings(md: string): ConversionWarning[] {
+  return hastToMast(mdToHast(md)).warnings;
 }
 
 // 辅助：获取顶层块列表
@@ -424,5 +429,38 @@ console.log('hello');
     const hr = blocks[blocks.length - 1] as MASTParagraphBlock;
     expect(hr.type).toBe('paragraph');
     expect(hr.content).toHaveLength(0);
+  });
+});
+
+// ── 有损转换警告 ──────────────────────────────────────────────────────────────
+
+describe('有损转换警告', () => {
+  it('H1 标题产生 heading 警告', () => {
+    const warnings = getWarnings('# 标题');
+    expect(warnings.some((w) => w.type === 'heading' && w.message.includes('H1'))).toBe(true);
+  });
+
+  it('H2-H6 标题均产生 heading 警告', () => {
+    for (let level = 2; level <= 6; level++) {
+      const md = '#'.repeat(level) + ' 标题';
+      const warnings = getWarnings(md);
+      expect(warnings.some((w) => w.type === 'heading' && w.message.includes(`H${level}`))).toBe(true);
+    }
+  });
+
+  it('多个标题产生多条 heading 警告', () => {
+    const warnings = getWarnings('# H1\n## H2\n### H3');
+    const headingWarnings = warnings.filter((w) => w.type === 'heading');
+    expect(headingWarnings).toHaveLength(3);
+  });
+
+  it('普通段落不产生警告', () => {
+    const warnings = getWarnings('普通文本，没有标题。');
+    expect(warnings).toHaveLength(0);
+  });
+
+  it('bold 文本不产生 heading 警告', () => {
+    const warnings = getWarnings('**加粗文本**');
+    expect(warnings.filter((w) => w.type === 'heading')).toHaveLength(0);
   });
 });
