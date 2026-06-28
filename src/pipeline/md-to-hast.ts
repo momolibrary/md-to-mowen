@@ -14,6 +14,8 @@ export function mdToHast(markdown: string): Root {
   let preprocessed = preprocessHighlight(markdown);
   // 预处理：![[note:noteId]] → ![note:noteId](note:noteId)
   preprocessed = preprocessed.replace(/!\[\[note:([^\]]+)\]\]/g, '![note:$1](note:$1)');
+  // 预处理：![[pdf:path]] → ![pdf:path](pdf:path)
+  preprocessed = preprocessed.replace(/!\[\[pdf:([^\]]+)\]\]/g, '![pdf:$1](pdf:$1)');
 
   const processor = unified().use(remarkParse).use(remarkGfm).use(remarkRehype, { allowDangerousHtml: true });
 

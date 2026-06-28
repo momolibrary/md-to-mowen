@@ -7,6 +7,7 @@ import type {
   MASTQuoteBlock,
   MASTCodeBlock,
   MASTNoteBlock,
+  MASTPdfBlock,
   MASTInlineMarks,
 } from '../mast/types.js';
 import type {
@@ -17,6 +18,7 @@ import type {
   NoteAtomAudio,
   NoteAtomCodeBlock,
   NoteAtomNote,
+  NoteAtomPdf,
   NoteAtomTextNode,
   NoteAtomMark,
 } from './types.js';
@@ -55,6 +57,8 @@ function convertBlock(block: MASTBlockNode, doc: MASTDocument): NoteAtomBlockNod
       return [convertCodeBlock(block)];
     case 'note':
       return [convertNote(block)];
+    case 'pdf':
+      return [convertPdf(block)];
   }
 }
 
@@ -132,6 +136,18 @@ function convertNote(block: MASTNoteBlock): NoteAtomNote {
     type: 'note',
     attrs: {
       uuid: block.noteId,
+    },
+  };
+}
+
+function convertPdf(block: MASTPdfBlock): NoteAtomPdf {
+  if (!block.uuid) {
+    throw new Error(`MASTPdfBlock ${block.id} has no uuid — run asset processing before serialization`);
+  }
+  return {
+    type: 'pdf',
+    attrs: {
+      uuid: block.uuid,
     },
   };
 }

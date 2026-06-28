@@ -9,6 +9,7 @@ import type {
   MASTAudioBlock,
   MASTCodeBlock,
   MASTNoteBlock,
+  MASTPdfBlock,
   MASTInlineNode,
   MASTTextRun,
   MASTInlineMarks,
@@ -221,6 +222,19 @@ function convertBlock(
           id: newId(),
           type: 'note',
           noteId,
+        };
+        return [block];
+      }
+
+      // PDF 嵌入约定：alt 以 "pdf:" 开头，src 以 "pdf:" 开头
+      if (alt.startsWith('pdf:') && src.startsWith('pdf:')) {
+        const pdfSrc = src.slice('pdf:'.length).trim();
+        const block: MASTPdfBlock = {
+          id: newId(),
+          type: 'pdf',
+          src: pdfSrc,
+          // 如果 src 看起来像 fileId（包含 -TMP 后缀），直接设为 uuid
+          ...(pdfSrc.includes('-TMP') ? { uuid: pdfSrc } : {}),
         };
         return [block];
       }

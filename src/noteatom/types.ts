@@ -14,7 +14,8 @@ export type NoteAtomBlockNode =
   | NoteAtomImage
   | NoteAtomAudio
   | NoteAtomCodeBlock
-  | NoteAtomNote;
+  | NoteAtomNote
+  | NoteAtomPdf;
 
 export interface NoteAtomParagraph {
   type: 'paragraph';
@@ -55,6 +56,13 @@ export interface NoteAtomNote {
   type: 'note';
   attrs: {
     uuid: string; // 被引用的笔记 ID
+  };
+}
+
+export interface NoteAtomPdf {
+  type: 'pdf';
+  attrs: {
+    uuid: string; // PDF 文件 ID
   };
 }
 

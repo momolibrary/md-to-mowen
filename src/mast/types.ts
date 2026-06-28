@@ -14,7 +14,8 @@ export type MASTBlockNode =
   | MASTImageBlock
   | MASTAudioBlock
   | MASTCodeBlock
-  | MASTNoteBlock;
+  | MASTNoteBlock
+  | MASTPdfBlock;
 
 export interface MASTParagraphBlock {
   id: MASTBlockId;
@@ -57,6 +58,13 @@ export interface MASTNoteBlock {
   id: MASTBlockId;
   type: 'note';
   noteId: string; // 被引用的笔记 ID
+}
+
+export interface MASTPdfBlock {
+  id: MASTBlockId;
+  type: 'pdf';
+  src: string; // 本地路径或 fileId（上传前/后）
+  uuid?: string; // 上传后的 fileId（资源阶段后）
 }
 
 export type MASTInlineNode = MASTTextRun;

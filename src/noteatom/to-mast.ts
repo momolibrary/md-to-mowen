@@ -8,6 +8,7 @@ import type {
   MASTAudioBlock,
   MASTCodeBlock,
   MASTNoteBlock,
+  MASTPdfBlock,
   MASTTextRun,
   MASTInlineMarks,
 } from '../mast/types.js';
@@ -20,6 +21,7 @@ import type {
   NoteAtomAudio,
   NoteAtomCodeBlock,
   NoteAtomNote,
+  NoteAtomPdf,
   NoteAtomTextNode,
   NoteAtomMark,
 } from './types.js';
@@ -62,6 +64,8 @@ function convertNode(node: NoteAtomBlockNode, blocks: Record<MASTBlockId, MASTBl
       return convertCodeBlock(node, blocks);
     case 'note':
       return convertNote(node, blocks);
+    case 'pdf':
+      return convertPdf(node, blocks);
   }
 }
 
@@ -132,6 +136,18 @@ function convertNote(block: NoteAtomNote, blocks: Record<MASTBlockId, MASTBlockN
     id,
     type: 'note',
     noteId: block.attrs.uuid,
+  };
+  blocks[id] = mast;
+  return id;
+}
+
+function convertPdf(block: NoteAtomPdf, blocks: Record<MASTBlockId, MASTBlockNode>): MASTBlockId {
+  const id = newId();
+  const mast: MASTPdfBlock = {
+    id,
+    type: 'pdf',
+    src: `mowen://file/${block.attrs.uuid}`,
+    uuid: block.attrs.uuid,
   };
   blocks[id] = mast;
   return id;

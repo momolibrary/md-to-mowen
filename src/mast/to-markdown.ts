@@ -7,6 +7,7 @@ import type {
   MASTAudioBlock,
   MASTCodeBlock,
   MASTNoteBlock,
+  MASTPdfBlock,
   MASTTextRun,
   MASTInlineMarks,
 } from './types.js';
@@ -56,6 +57,8 @@ function serializeBlock(block: MASTBlockNode, doc: MASTDocument): string {
       return serializeCodeBlock(block);
     case 'note':
       return serializeNote(block);
+    case 'pdf':
+      return serializePdf(block);
   }
 }
 
@@ -96,6 +99,10 @@ function serializeCodeBlock(block: MASTCodeBlock): string {
 
 function serializeNote(block: MASTNoteBlock): string {
   return `![[note:${block.noteId}]]`;
+}
+
+function serializePdf(block: MASTPdfBlock): string {
+  return `![[pdf:${block.src}]]`;
 }
 
 function serializeTextRun(run: MASTTextRun): string {

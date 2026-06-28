@@ -1,4 +1,4 @@
-import type { MASTDocument, MASTImageBlock, MASTAudioBlock } from '../mast/types.js';
+import type { MASTDocument, MASTImageBlock, MASTAudioBlock, MASTPdfBlock } from '../mast/types.js';
 import type { MowenClient } from '../mowen/client.js';
 import { uploadLocalFile, uploadRemoteUrl, uploadDataUri } from '../mowen/upload.js';
 import { renderTableToPng } from './table-renderer.js';
@@ -44,9 +44,10 @@ export async function processAssets(
 
   const imageBlocks = Object.values(doc.blocks).filter((b): b is MASTImageBlock => b.type === 'image');
   const audioBlocks = Object.values(doc.blocks).filter((b): b is MASTAudioBlock => b.type === 'audio');
+  const pdfBlocks = Object.values(doc.blocks).filter((b): b is MASTPdfBlock => b.type === 'pdf' && !b.uuid);
 
-  // 并发上传，最多 3 个同时进行
-  await concurrentMap([...imageBlocks, ...audioBlocks], 3, async (block) => {
+  // 串行上传，每次间隔 1.1s
+  await concurrentMap([...imageBlocks, ...audioBlocks, ...pdfBlocks], 3, async (block) => {
     if (dryRun) {
       block.uuid = `dry-run-${block.id}`;
       return;
@@ -54,10 +55,56 @@ export async function processAssets(
 
     if (block.type === 'audio') {
       block.uuid = await uploadAudioBlock(block, client, baseDir);
+    } else if (block.type === 'pdf') {
+      block.uuid = await uploadPdfBlock(block, client, baseDir);
     } else {
       block.uuid = await uploadBlock(block, client, baseDir);
     }
   });
+}
+
+async function uploadPdfBlock(block: MASTPdfBlock, client: MowenClient, baseDir: string): Promise<string> {
+  const src = block.src;
+
+  // 远程 URL
+  if (src.startsWith('http://') || src.startsWith('https://')) {
+    return client.uploadViaUrl(3, src);
+  }
+
+  // 本地路径
+  const { readFile } = await import('fs/promises');
+  const { resolve, isAbsolute, basename } = await import('path');
+  const decodedSrc = decodeURIComponent(src);
+  const absPath = isAbsolute(decodedSrc) ? decodedSrc : resolve(baseDir, decodedSrc);
+  const fileName = basename(absPath);
+  const fileBuffer = await readFile(absPath);
+  const form = await client.uploadPrepare(3, fileName);
+
+  await withRetry(async () => {
+    const formData = new FormData();
+    const fields = [
+      'key',
+      'policy',
+      'callback',
+      'success_action_status',
+      'x-oss-credential',
+      'x-oss-date',
+      'x-oss-meta-mo-uid',
+      'x-oss-signature',
+      'x-oss-signature-version',
+      'x:file_id',
+      'x:file_name',
+      'x:file_uid',
+    ] as const;
+    for (const field of fields) {
+      formData.append(field, (form as unknown as Record<string, string>)[field]);
+    }
+    formData.append('file', new Blob([fileBuffer], { type: 'application/pdf' }), fileName);
+    const res = await fetch(form.endpoint, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error(`OSS upload failed: ${res.status}`);
+  });
+
+  return form['x:file_id'];
 }
 
 async function uploadAudioBlock(block: MASTAudioBlock, client: MowenClient, baseDir: string): Promise<string> {
