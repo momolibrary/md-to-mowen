@@ -99,6 +99,9 @@ function extractInline(nodes: Node[], marks: MASTInlineMarks = {}): MASTTextRun[
       case 'del':
         childMarks.strikethrough = true;
         break;
+      case 'mark':
+        childMarks.highlight = true;
+        break;
       case 'a': {
         const href = (node.properties?.href as string) ?? '';
         // 忽略纯锚点链接（fragment links）
@@ -152,6 +155,7 @@ function marksEqual(a: MASTInlineMarks | undefined, b: MASTInlineMarks | undefin
     a.italic === b.italic &&
     a.code === b.code &&
     a.strikethrough === b.strikethrough &&
+    a.highlight === b.highlight &&
     a.link === b.link
   );
 }

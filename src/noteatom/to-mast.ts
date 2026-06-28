@@ -143,6 +143,9 @@ function convertTextRun(run: NoteAtomTextNode): MASTTextRun {
       case 'strikethrough':
         marks.strikethrough = true;
         break;
+      case 'highlight':
+        marks.highlight = true;
+        break;
       case 'link':
         marks.link = mark.attrs.href;
         break;

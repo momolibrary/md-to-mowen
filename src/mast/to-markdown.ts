@@ -113,6 +113,9 @@ function serializeTextRun(run: MASTTextRun): string {
   // italic
   if (run.marks.italic) text = `*${text}*`;
 
+  // highlight
+  if (run.marks.highlight) text = `==${text}==`;
+
   // link 最后包裹（outermost）
   if (run.marks.link) text = `[${text}](${run.marks.link})`;
 

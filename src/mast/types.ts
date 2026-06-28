@@ -60,5 +60,6 @@ export interface MASTInlineMarks {
   italic?: boolean;
   code?: boolean;
   strikethrough?: boolean;
+  highlight?: boolean;
   link?: string; // href
 }

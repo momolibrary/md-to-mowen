@@ -132,11 +132,12 @@ function convertTextRun(run: { type: 'text'; text: string; marks?: MASTInlineMar
 
   const marks: NoteAtomMark[] = [];
 
-  // 按优先级顺序：code → strikethrough → bold → italic → link
+  // 按优先级顺序：code → strikethrough → bold → italic → highlight → link
   if (run.marks.code) marks.push({ type: 'code' });
   if (run.marks.strikethrough) marks.push({ type: 'strikethrough' });
   if (run.marks.bold) marks.push({ type: 'bold' });
   if (run.marks.italic) marks.push({ type: 'italic' });
+  if (run.marks.highlight) marks.push({ type: 'highlight' });
   if (run.marks.link) marks.push({ type: 'link', attrs: { href: run.marks.link } });
 
   if (marks.length > 0) node.marks = marks;
