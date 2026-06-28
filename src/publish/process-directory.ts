@@ -2,10 +2,13 @@ import { readdir, lstat } from 'fs/promises';
 import { join, resolve, basename, extname } from 'path';
 import { processFile, type PublishOptions } from './process-file.js';
 import type { MowenClient } from '../mowen/client.js';
+import { createProgressLine } from './progress.js';
 
 export interface DirectoryOptions extends PublishOptions {
   /** 是否递归扫描子目录，默认 true */
   recursive?: boolean;
+  /** 静默模式：抑制进度条，仅输出最终汇总 */
+  quiet?: boolean;
 }
 
 export interface FileResult {
@@ -72,7 +75,7 @@ export async function processDirectory(
   client: MowenClient,
   opts: DirectoryOptions = {},
 ): Promise<BatchResult> {
-  const { recursive = true } = opts;
+  const { recursive = true, quiet = false } = opts;
   const absDirPath = resolve(dirPath);
 
   // 检查目录是否存在
@@ -93,12 +96,19 @@ export async function processDirectory(
   console.log(`发现 ${files.length} 个 Markdown 文件，开始发布...\n`);
 
   const results: FileResult[] = [];
-  let index = 0;
+  const startTime = Date.now();
 
-  for (const filePath of files) {
-    index++;
+  for (let index = 0; index < files.length; index++) {
+    const filePath = files[index]!;
     const fileName = basename(filePath);
-    console.log(`[${index}/${files.length}] ${fileName}`);
+    const current = index + 1;
+
+    if (quiet) {
+      console.log(`[${current}/${files.length}] ${fileName}`);
+    } else {
+      const elapsed = Date.now() - startTime;
+      console.log(createProgressLine(current, files.length, elapsed));
+    }
 
     try {
       const result = await processFile(filePath, client, opts);
@@ -108,7 +118,7 @@ export async function processDirectory(
         ...(result.noteId ? { noteId: result.noteId } : {}),
         ...(result.noteUrl ? { noteUrl: result.noteUrl } : {}),
       });
-      console.log(`  ✅ 发布成功: ${result.noteUrl ?? '(dry-run)'}\n`);
+      console.log(`  ✅ ${fileName}`);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       results.push({
@@ -116,18 +126,19 @@ export async function processDirectory(
         status: 'failed',
         error: errorMsg,
       });
-      console.log(`  ❌ 发布失败: ${errorMsg}\n`);
+      console.log(`  ❌ ${fileName}: ${errorMsg}`);
     }
 
     // 文件间隔 1.1 秒（最后一个文件不等待）
-    if (index < files.length) {
+    if (current < files.length) {
       await sleep(1100);
     }
   }
 
   // 汇总报告
+  const elapsedMs = Date.now() - startTime;
   const summary = computeSummary(results);
-  printSummary(summary);
+  printSummary(summary, elapsedMs);
 
   return summary;
 }
@@ -146,12 +157,17 @@ function computeSummary(files: FileResult[]): BatchResult {
   };
 }
 
-function printSummary(result: BatchResult): void {
+function printSummary(result: BatchResult, elapsedMs?: number): void {
   console.log('── 发布汇总 ──────────────────────────────────────────');
   console.log(`总计：${result.total} 个文件`);
   console.log(`  ✅ 成功：${result.success}`);
   console.log(`  ❌ 失败：${result.failed}`);
   console.log(`  ⏭️  跳过：${result.skipped}`);
+
+  if (elapsedMs !== undefined) {
+    const seconds = (elapsedMs / 1000).toFixed(1);
+    console.log(`  ⏱️  耗时：${seconds}s`);
+  }
 
   if (result.failed > 0) {
     console.log('\n失败文件：');

@@ -154,6 +154,7 @@ program
   .option('--cache-dir <dir>', '保存各阶段产物的目录（调试用）')
   .option('--code-block-style <style>', '代码块样式：paragraph 或 codeblock')
   .option('--no-recursive', '批量发布时不递归扫描子目录', false)
+  .option('--quiet', '静默模式：抑制进度条，仅输出最终汇总', false)
   .action(async (opts) => {
     const apiKey = getApiKey();
     if (!apiKey && !opts.dryRun) {
@@ -210,6 +211,7 @@ program
           dryRun: opts.dryRun,
           cacheDir: resolvedConfig.cacheDir,
           recursive: !opts.noRecursive,
+          quiet: opts.quiet,
         });
 
         // 批量模式下，有失败则 exit 1
