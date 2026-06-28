@@ -8,7 +8,13 @@ export interface NoteAtomDoc {
   content: NoteAtomBlockNode[];
 }
 
-export type NoteAtomBlockNode = NoteAtomParagraph | NoteAtomQuote | NoteAtomImage | NoteAtomAudio | NoteAtomCodeBlock;
+export type NoteAtomBlockNode =
+  | NoteAtomParagraph
+  | NoteAtomQuote
+  | NoteAtomImage
+  | NoteAtomAudio
+  | NoteAtomCodeBlock
+  | NoteAtomNote;
 
 export interface NoteAtomParagraph {
   type: 'paragraph';
@@ -43,6 +49,13 @@ export interface NoteAtomCodeBlock {
     language: string;
   };
   content: string;
+}
+
+export interface NoteAtomNote {
+  type: 'note';
+  attrs: {
+    uuid: string; // 被引用的笔记 ID
+  };
 }
 
 export interface NoteAtomTextNode {

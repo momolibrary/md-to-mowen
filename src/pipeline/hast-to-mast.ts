@@ -8,6 +8,7 @@ import type {
   MASTImageBlock,
   MASTAudioBlock,
   MASTCodeBlock,
+  MASTNoteBlock,
   MASTInlineNode,
   MASTTextRun,
   MASTInlineMarks,
@@ -209,6 +210,17 @@ function convertBlock(
           type: 'audio',
           src,
           showNote,
+        };
+        return [block];
+      }
+
+      // 内链笔记约定：alt 以 "note:" 开头，src 以 "note:" 开头
+      if (alt.startsWith('note:') && src.startsWith('note:')) {
+        const noteId = alt.slice('note:'.length).trim();
+        const block: MASTNoteBlock = {
+          id: newId(),
+          type: 'note',
+          noteId,
         };
         return [block];
       }

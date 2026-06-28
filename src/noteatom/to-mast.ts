@@ -7,6 +7,7 @@ import type {
   MASTImageBlock,
   MASTAudioBlock,
   MASTCodeBlock,
+  MASTNoteBlock,
   MASTTextRun,
   MASTInlineMarks,
 } from '../mast/types.js';
@@ -18,6 +19,7 @@ import type {
   NoteAtomImage,
   NoteAtomAudio,
   NoteAtomCodeBlock,
+  NoteAtomNote,
   NoteAtomTextNode,
   NoteAtomMark,
 } from './types.js';
@@ -58,6 +60,8 @@ function convertNode(node: NoteAtomBlockNode, blocks: Record<MASTBlockId, MASTBl
       return convertAudio(node, blocks);
     case 'codeblock':
       return convertCodeBlock(node, blocks);
+    case 'note':
+      return convertNote(node, blocks);
   }
 }
 
@@ -117,6 +121,17 @@ function convertCodeBlock(block: NoteAtomCodeBlock, blocks: Record<MASTBlockId, 
     type: 'codeblock',
     language: block.attrs.language ?? '',
     content: block.content ?? '',
+  };
+  blocks[id] = mast;
+  return id;
+}
+
+function convertNote(block: NoteAtomNote, blocks: Record<MASTBlockId, MASTBlockNode>): MASTBlockId {
+  const id = newId();
+  const mast: MASTNoteBlock = {
+    id,
+    type: 'note',
+    noteId: block.attrs.uuid,
   };
   blocks[id] = mast;
   return id;

@@ -11,7 +11,9 @@ import { preprocessHighlight } from './remark-highlight.js';
  */
 export function mdToHast(markdown: string): Root {
   // 预处理：==text== → <mark>text</mark>
-  const preprocessed = preprocessHighlight(markdown);
+  let preprocessed = preprocessHighlight(markdown);
+  // 预处理：![[note:noteId]] → ![note:noteId](note:noteId)
+  preprocessed = preprocessed.replace(/!\[\[note:([^\]]+)\]\]/g, '![note:$1](note:$1)');
 
   const processor = unified().use(remarkParse).use(remarkGfm).use(remarkRehype, { allowDangerousHtml: true });
 

@@ -125,6 +125,7 @@ function collectStats(mast: MASTDocument, dryRun: boolean): PipelineStats {
       else images++;
     } else if (block.type === 'audio') audios++;
     else if (block.type === 'codeblock') codeblocks++;
+    // note 块不计入统计（无需上传资源）
   }
 
   return {

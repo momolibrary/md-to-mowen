@@ -6,6 +6,7 @@ import type {
   MASTImageBlock,
   MASTAudioBlock,
   MASTCodeBlock,
+  MASTNoteBlock,
   MASTTextRun,
   MASTInlineMarks,
 } from './types.js';
@@ -53,6 +54,8 @@ function serializeBlock(block: MASTBlockNode, doc: MASTDocument): string {
       return serializeAudio(block);
     case 'codeblock':
       return serializeCodeBlock(block);
+    case 'note':
+      return serializeNote(block);
   }
 }
 
@@ -89,6 +92,10 @@ function serializeAudio(block: MASTAudioBlock): string {
 function serializeCodeBlock(block: MASTCodeBlock): string {
   const lang = block.language || '';
   return '```' + lang + '\n' + block.content + '\n```';
+}
+
+function serializeNote(block: MASTNoteBlock): string {
+  return `![[note:${block.noteId}]]`;
 }
 
 function serializeTextRun(run: MASTTextRun): string {
