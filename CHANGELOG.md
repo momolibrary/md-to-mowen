@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/momolibrary/md-to-mowen/compare/v1.8.1...v1.8.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* 更新 CLI 集成测试指向新入口 ([58800e5](https://github.com/momolibrary/md-to-mowen/commit/58800e5a3bc73c54e8e6ca197c7306d79ddd86dd))
+
 ## [1.8.1](https://github.com/momolibrary/md-to-mowen/compare/v1.8.0...v1.8.1) (2026-06-29)
 
 

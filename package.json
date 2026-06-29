@@ -1,6 +1,6 @@
 {
   "name": "md-to-mowen",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "type": "module",
   "description": "将 Markdown（GFM）转换为墨问笔记的 CLI 工具",
   "main": "./dist/publish/index.js",
