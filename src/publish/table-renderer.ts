@@ -63,14 +63,6 @@ const COLORS = {
   brand: '#8A6A3F',
 };
 
-// ── SVG 尺寸解析 ──────────────────────────────────────────────────────────────
-
-function parseSvgSize(svg: string): { width: number; height: number } {
-  const w = Number(svg.match(/width="(\d+(?:\.\d+)?)"/)?.[1] ?? 0);
-  const h = Number(svg.match(/height="(\d+(?:\.\d+)?)"/)?.[1] ?? 0);
-  return { width: Math.ceil(w), height: Math.ceil(h) };
-}
-
 // ── 表格渲染 ──────────────────────────────────────────────────────────────────
 
 export async function renderTableToPng(tableMarkdown: string): Promise<Buffer> {
