@@ -18,6 +18,7 @@ import { HIGHLIGHT_MARKER } from './md-to-hast.js';
 
 // ── 转换选项与结果 ─────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface HastToMastOptions {
   // 预留扩展
 }
