@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/momolibrary/md-to-mowen/compare/v1.6.0...v1.7.0) (2026-06-29)
+
+
+### Features
+
+* 发布 v1.6.0 ([a6c77ea](https://github.com/momolibrary/md-to-mowen/commit/a6c77ea1c790bb26518f0f957f6aa6036e836443))
+
 # [1.5.0](https://github.com/momolibrary/md-to-mowen/compare/v1.4.1...v1.5.0) (2026-06-29)
 
 
