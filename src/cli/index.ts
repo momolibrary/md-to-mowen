@@ -376,7 +376,7 @@ program
       console.log(`\n✅ 隐私设置成功`);
       console.log(`   笔记 ID：${noteId}`);
       console.log(`   隐私状态：${visibility}`);
-      console.log(`   访问地址：https://mowen.cn/note/${noteId}\n`);
+      console.log(`   访问地址：https://note.mowen.cn/detail/${noteId}\n`);
     } catch (err) {
       console.error('设置失败：', err instanceof Error ? err.message : err);
       process.exit(1);

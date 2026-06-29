@@ -1,7 +1,7 @@
 import { relative } from 'path';
 import type { MetadataStore, NoteRecord } from '../shared/metadata.js';
 
-const MOWEN_NOTE_BASE_URL = 'https://mowen.cn/note';
+const MOWEN_NOTE_BASE_URL = 'https://note.mowen.cn/detail';
 
 export interface StatusEntry {
   file: string;
@@ -28,7 +28,11 @@ export function listAllNotes(store: MetadataStore, cwd: string): StatusEntry[] {
 }
 
 /** 查询单个文件的发布状态，未发布返回 null */
-export function lookupFileStatus(store: MetadataStore, absPath: string, cwd: string): StatusEntry | null {
+export function lookupFileStatus(
+  store: MetadataStore,
+  absPath: string,
+  cwd: string
+): StatusEntry | null {
   const record = store.notes[absPath];
   if (!record) return null;
   return toEntry(absPath, record, cwd);

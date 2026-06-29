@@ -53,9 +53,17 @@ export interface PipelineStats {
 export async function processFile(
   filePath: string,
   client: MowenClient,
-  opts: PublishOptions = {},
+  opts: PublishOptions = {}
 ): Promise<PublishResult> {
-  const { noteId, tags, autoPublish = false, dryRun = false, cacheDir, codeBlockStyle, quiet = false } = opts;
+  const {
+    noteId,
+    tags,
+    autoPublish = false,
+    dryRun = false,
+    cacheDir,
+    codeBlockStyle,
+    quiet = false,
+  } = opts;
 
   // ── 阶段 00：读取文件 ────────────────────────────────────────────────────────
   const absPath = resolve(filePath);
@@ -103,7 +111,7 @@ export async function processFile(
     resultNoteId = await client.createNote(noteAtom, { autoPublish, tags: tags ?? [] });
   }
 
-  const noteUrl = `https://mowen.cn/note/${resultNoteId}`;
+  const noteUrl = `https://note.mowen.cn/detail/${resultNoteId}`;
   return { noteId: resultNoteId, noteUrl, dryRun: false, stats, warnings };
 }
 
@@ -146,7 +154,7 @@ function printDryRunReport(
   filePath: string,
   stats: PipelineStats,
   noteAtom: NoteAtomDoc,
-  warnings: ConversionWarning[],
+  warnings: ConversionWarning[]
 ): void {
   console.log('\n── dry-run 报告 ──────────────────────────────────────────');
   console.log(`文件：${filePath}`);
@@ -179,7 +187,11 @@ function printDryRunReport(
 
 // ── 缓存写入 ──────────────────────────────────────────────────────────────────
 
-async function writeCache(cacheDir: string | undefined, name: string, data: unknown): Promise<void> {
+async function writeCache(
+  cacheDir: string | undefined,
+  name: string,
+  data: unknown
+): Promise<void> {
   if (!cacheDir) return;
   const { writeFile, mkdir } = await import('fs/promises');
   await mkdir(cacheDir, { recursive: true });

@@ -104,7 +104,7 @@ describe('正式发布', () => {
 
     expect(result.dryRun).toBe(false);
     expect(result.noteId).toBe('note-id-abc');
-    expect(result.noteUrl).toBe('https://mowen.cn/note/note-id-abc');
+    expect(result.noteUrl).toBe('https://note.mowen.cn/detail/note-id-abc');
     expect(client.createNote).toHaveBeenCalledOnce();
   });
 
