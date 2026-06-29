@@ -3,6 +3,23 @@
 
 ### Bug Fixes
 
+* 修复版本发布问题 ([0ae7415](https://github.com/momolibrary/md-to-mowen/commit/0ae741540af7aebe6b1bed24e288801929e1cc18))
+* 清理版本标签，重新发布 ([48e3091](https://github.com/momolibrary/md-to-mowen/commit/48e3091d9b9e04e97ec13d1c7f79c35ec93c1a84))
+* 移除未使用的 import ([279d9a5](https://github.com/momolibrary/md-to-mowen/commit/279d9a57aa77af8a62cbcae17cbbca559e3031e5))
+* 统一命名为 md-to-mowen，消除 mowen-publish 残留 ([5d500d8](https://github.com/momolibrary/md-to-mowen/commit/5d500d8353d0b6f383d66bd37bbd748dcd46ba0f))
+
+
+### Features
+
+* 添加 install-skill 命令，支持 Claude Code 和 Cursor 技能安装 ([5a018a2](https://github.com/momolibrary/md-to-mowen/commit/5a018a2aeb2e4582d0b7117cd020387a63ee49a2))
+* 清理版本标签，发布 v1.6.0 ([d398884](https://github.com/momolibrary/md-to-mowen/commit/d398884240ddb1f4709b816e6c85ca981c5d4581))
+* 统一命名规范，添加 install-skill 命令 ([5d25114](https://github.com/momolibrary/md-to-mowen/commit/5d251149a828dd52c171c9aca03e59595c04d368))
+
+# [1.5.0](https://github.com/momolibrary/md-to-mowen/compare/v1.4.1...v1.5.0) (2026-06-29)
+
+
+### Bug Fixes
+
 * 移除未使用的 import ([279d9a5](https://github.com/momolibrary/md-to-mowen/commit/279d9a57aa77af8a62cbcae17cbbca559e3031e5))
 
 
