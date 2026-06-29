@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 
 const program = new Command();
 
-program.name('mowen-publish').description('墨问文章发布 CLI 工具').version(VERSION);
+program.name('md-to-mowen').description('墨问文章发布 CLI 工具').version(VERSION);
 
 program
   .command('publish <file>')

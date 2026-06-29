@@ -141,7 +141,7 @@ export async function publish(file: string, options: PublishOptions = {}): Promi
       console.log(`📊 Step 3: Rendering ${tables.length} tables...`);
 
       // 创建临时目录
-      const tempDir = join(baseDir, '.mowen-publish-tables');
+      const tempDir = join(baseDir, '.md-to-mowen-tables');
       if (!existsSync(tempDir)) {
         mkdirSync(tempDir, { recursive: true });
       }
@@ -231,7 +231,7 @@ export async function publish(file: string, options: PublishOptions = {}): Promi
     if (existsSync(logDir)) {
       const logFile = join(
         logDir,
-        `mowen_publish_${new Date().toISOString().replace(/[:.]/g, '-')}.md`
+        `md-to-mowen_${new Date().toISOString().replace(/[:.]/g, '-')}.md`
       );
       const logContent = `# 墨问发布记录
 

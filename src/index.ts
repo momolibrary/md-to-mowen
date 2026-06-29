@@ -1,5 +1,5 @@
 /**
- * mowen-publish - 墨问文章发布工具
+ * md-to-mowen - 墨问文章发布工具
  *
  * @packageDocumentation
  */

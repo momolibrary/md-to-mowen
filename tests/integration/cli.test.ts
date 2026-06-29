@@ -30,7 +30,7 @@ describe('CLI', () => {
 
   it('should show help', () => {
     const { stdout } = runCli('--help');
-    expect(stdout).toContain('mowen-publish');
+    expect(stdout).toContain('md-to-mowen');
     expect(stdout).toContain('publish');
     expect(stdout).toContain('lint');
     expect(stdout).toContain('upload');

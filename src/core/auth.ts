@@ -80,7 +80,7 @@ export function logPublish(
     mkdirSync(logDir, { recursive: true });
   }
 
-  const logFile = join(logDir, 'mowen_publish_log.md');
+  const logFile = join(logDir, 'md-to-mowen_log.md');
   const timestamp = new Date().toISOString();
   const logEntry = `\n- **${timestamp}**: ${result.toUpperCase()} - Note: ${noteId}, File: ${file}${details ? `, Details: ${details}` : ''}\n`;
 
