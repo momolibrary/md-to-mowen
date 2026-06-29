@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/momolibrary/md-to-mowen/compare/v1.9.0...v1.9.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* 修复 codeblock 发布时 [400] CODEC 错误 ([00850c1](https://github.com/momolibrary/md-to-mowen/commit/00850c1c8e1a461e0e81c1c0741cf5cb8b5f3f39))
+
 # [1.9.0](https://github.com/momolibrary/md-to-mowen/compare/v1.8.3...v1.9.0) (2026-06-29)
 
 
