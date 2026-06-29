@@ -30,15 +30,14 @@ md-to-mowen publish -i ./posts
 md-to-mowen publish -i <path> [options]
 ```
 
-| 选项                         | 说明                               |
-| ---------------------------- | ---------------------------------- |
-| `-i, --input <path>`         | Markdown 文件或目录（必填）        |
-| `--note-id <id>`             | 编辑已有笔记（全量替换）           |
-| `--tags <tags>`              | 标签，逗号分隔                     |
-| `--auto-publish`             | 立即发布（非草稿）                 |
-| `--dry-run`                  | 预览模式，不调用 API               |
-| `--quiet`                    | 静默模式，抑制进度条               |
-| `--code-block-style <style>` | 代码块样式：paragraph 或 codeblock |
+| 选项                 | 说明                        |
+| -------------------- | --------------------------- |
+| `-i, --input <path>` | Markdown 文件或目录（必填） |
+| `--note-id <id>`     | 编辑已有笔记（全量替换）    |
+| `--tags <tags>`      | 标签，逗号分隔              |
+| `--auto-publish`     | 立即发布（非草稿）          |
+| `--dry-run`          | 预览模式，不调用 API        |
+| `--quiet`            | 静默模式，抑制进度条        |
 
 ### status — 查看发布状态
 
@@ -89,19 +88,17 @@ md-to-mowen config
 {
   "defaultTags": "tech,ai",
   "autoPublish": false,
-  "codeBlockStyle": "paragraph",
   "cacheDir": "out/pipeline-cache"
 }
 ```
 
 ## 环境变量
 
-| 变量                     | 说明         |
-| ------------------------ | ------------ |
-| `MOWEN_API_KEY`          | 墨问 API Key |
-| `MOWEN_DEFAULT_TAGS`     | 默认标签     |
-| `MOWEN_AUTO_PUBLISH`     | 自动发布     |
-| `MOWEN_CODE_BLOCK_STYLE` | 代码块样式   |
+| 变量                 | 说明         |
+| -------------------- | ------------ |
+| `MOWEN_API_KEY`      | 墨问 API Key |
+| `MOWEN_DEFAULT_TAGS` | 默认标签     |
+| `MOWEN_AUTO_PUBLISH` | 自动发布     |
 
 ## 典型工作流
 

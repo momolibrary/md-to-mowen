@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFile, mkdir, rm, existsSync } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { loadConfig, getConfigPaths, DEFAULT_CONFIG, type ResolvedConfig } from '../../src/shared/config.js';
+import {
+  loadConfig,
+  getConfigPaths,
+  DEFAULT_CONFIG,
+  type ResolvedConfig,
+} from '../../src/shared/config.js';
 
 let testDir: string;
 let originalEnv: Record<string, string | undefined>;
@@ -15,14 +20,12 @@ beforeEach(async () => {
   originalEnv = {
     MOWEN_DEFAULT_TAGS: process.env.MOWEN_DEFAULT_TAGS,
     MOWEN_AUTO_PUBLISH: process.env.MOWEN_AUTO_PUBLISH,
-    MOWEN_CODE_BLOCK_STYLE: process.env.MOWEN_CODE_BLOCK_STYLE,
     MOWEN_CACHE_DIR: process.env.MOWEN_CACHE_DIR,
   };
 
   // 清除环境变量
   delete process.env.MOWEN_DEFAULT_TAGS;
   delete process.env.MOWEN_AUTO_PUBLISH;
-  delete process.env.MOWEN_CODE_BLOCK_STYLE;
   delete process.env.MOWEN_CACHE_DIR;
 });
 
@@ -51,7 +54,6 @@ describe('loadConfig 默认值', () => {
     const config = loadConfig({}, testDir);
     expect(config.defaultTags).toBe('');
     expect(config.autoPublish).toBe(false);
-    expect(config.codeBlockStyle).toBe('paragraph');
     expect(config.cacheDir).toBe('out/pipeline-cache');
   });
 });
@@ -67,16 +69,14 @@ describe('项目级配置文件', () => {
       JSON.stringify({
         defaultTags: 'tech,ai',
         autoPublish: true,
-        codeBlockStyle: 'codeblock',
         cacheDir: 'custom-cache',
       }),
-      'utf8',
+      'utf8'
     );
 
     const config = loadConfig({}, projectDir);
     expect(config.defaultTags).toBe('tech,ai');
     expect(config.autoPublish).toBe(true);
-    expect(config.codeBlockStyle).toBe('codeblock');
     expect(config.cacheDir).toBe('custom-cache');
   });
 
@@ -92,7 +92,7 @@ describe('项目级配置文件', () => {
         defaultTags: 'user-tags',
         autoPublish: false,
       }),
-      'utf8',
+      'utf8'
     );
 
     // 项目级配置
@@ -103,7 +103,7 @@ describe('项目级配置文件', () => {
         defaultTags: 'project-tags',
         autoPublish: true,
       }),
-      'utf8',
+      'utf8'
     );
 
     // 由于 getConfigPaths 使用 homedir()，我们无法直接模拟用户目录
@@ -139,7 +139,7 @@ describe('项目级配置文件', () => {
         unknownField: 'shouldBeIgnored',
         anotherUnknown: 123,
       }),
-      'utf8',
+      'utf8'
     );
 
     const warnings: string[] = [];
@@ -149,28 +149,6 @@ describe('项目级配置文件', () => {
     const config = loadConfig({}, projectDir);
     expect(config.defaultTags).toBe('test');
     expect(warnings.some((w) => w.includes('忽略未知字段'))).toBe(true);
-
-    console.warn = originalWarn;
-  });
-
-  it('无效的 codeBlockStyle 被忽略并警告', async () => {
-    const projectDir = join(testDir, 'project');
-    await mkdir(join(projectDir, '.md-to-mowen'), { recursive: true });
-    await writeFile(
-      join(projectDir, '.md-to-mowen', 'config.json'),
-      JSON.stringify({
-        codeBlockStyle: 'invalid-style',
-      }),
-      'utf8',
-    );
-
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (msg: string) => warnings.push(msg);
-
-    const config = loadConfig({}, projectDir);
-    expect(config.codeBlockStyle).toBe('paragraph'); // 默认值
-    expect(warnings.some((w) => w.includes('codeBlockStyle'))).toBe(true);
 
     console.warn = originalWarn;
   });
@@ -185,7 +163,7 @@ describe('CLI 参数覆盖', () => {
     await writeFile(
       join(projectDir, '.md-to-mowen', 'config.json'),
       JSON.stringify({ defaultTags: 'config-tags' }),
-      'utf8',
+      'utf8'
     );
 
     const config = loadConfig({ defaultTags: 'cli-tags' }, projectDir);
@@ -195,23 +173,14 @@ describe('CLI 参数覆盖', () => {
   it('CLI --auto-publish 覆盖配置文件 autoPublish', async () => {
     const projectDir = join(testDir, 'project');
     await mkdir(join(projectDir, '.md-to-mowen'), { recursive: true });
-    await writeFile(join(projectDir, '.md-to-mowen', 'config.json'), JSON.stringify({ autoPublish: false }), 'utf8');
+    await writeFile(
+      join(projectDir, '.md-to-mowen', 'config.json'),
+      JSON.stringify({ autoPublish: false }),
+      'utf8'
+    );
 
     const config = loadConfig({ autoPublish: true }, projectDir);
     expect(config.autoPublish).toBe(true);
-  });
-
-  it('CLI --code-block-style 覆盖配置文件 codeBlockStyle', async () => {
-    const projectDir = join(testDir, 'project');
-    await mkdir(join(projectDir, '.md-to-mowen'), { recursive: true });
-    await writeFile(
-      join(projectDir, '.md-to-mowen', 'config.json'),
-      JSON.stringify({ codeBlockStyle: 'paragraph' }),
-      'utf8',
-    );
-
-    const config = loadConfig({ codeBlockStyle: 'codeblock' }, projectDir);
-    expect(config.codeBlockStyle).toBe('codeblock');
   });
 });
 
@@ -242,26 +211,6 @@ describe('环境变量配置', () => {
     expect(config.autoPublish).toBe(false);
   });
 
-  it('MOWEN_CODE_BLOCK_STYLE=codeblock 正确应用', () => {
-    process.env.MOWEN_CODE_BLOCK_STYLE = 'codeblock';
-    const config = loadConfig({}, testDir);
-    expect(config.codeBlockStyle).toBe('codeblock');
-  });
-
-  it('MOWEN_CODE_BLOCK_STYLE 无效值警告并忽略', () => {
-    process.env.MOWEN_CODE_BLOCK_STYLE = 'invalid';
-
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (msg: string) => warnings.push(msg);
-
-    const config = loadConfig({}, testDir);
-    expect(config.codeBlockStyle).toBe('paragraph');
-    expect(warnings.some((w) => w.includes('MOWEN_CODE_BLOCK_STYLE'))).toBe(true);
-
-    console.warn = originalWarn;
-  });
-
   it('MOWEN_CACHE_DIR 正确应用', () => {
     process.env.MOWEN_CACHE_DIR = 'env-cache';
     const config = loadConfig({}, testDir);
@@ -276,19 +225,16 @@ describe('环境变量配置', () => {
       JSON.stringify({
         defaultTags: 'config-tags',
         autoPublish: false,
-        codeBlockStyle: 'paragraph',
       }),
-      'utf8',
+      'utf8'
     );
 
     process.env.MOWEN_DEFAULT_TAGS = 'env-tags';
     process.env.MOWEN_AUTO_PUBLISH = 'true';
-    process.env.MOWEN_CODE_BLOCK_STYLE = 'codeblock';
 
     const config = loadConfig({}, projectDir);
     expect(config.defaultTags).toBe('env-tags');
     expect(config.autoPublish).toBe(true);
-    expect(config.codeBlockStyle).toBe('codeblock');
   });
 });
 
@@ -303,9 +249,8 @@ describe('配置优先级链', () => {
       JSON.stringify({
         defaultTags: 'project-tags',
         autoPublish: false,
-        codeBlockStyle: 'paragraph',
       }),
-      'utf8',
+      'utf8'
     );
 
     process.env.MOWEN_DEFAULT_TAGS = 'env-tags';
@@ -317,12 +262,11 @@ describe('配置优先级链', () => {
         defaultTags: 'cli-tags',
         autoPublish: false, // CLI 覆盖 env
       },
-      projectDir,
+      projectDir
     );
 
     expect(config.defaultTags).toBe('cli-tags');
     expect(config.autoPublish).toBe(false); // CLI 覆盖 env 的 true
-    expect(config.codeBlockStyle).toBe('paragraph'); // 项目配置
   });
 });
 

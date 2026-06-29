@@ -19,8 +19,7 @@ import { HIGHLIGHT_MARKER } from './md-to-hast.js';
 // ── 转换选项与结果 ─────────────────────────────────────────────────────────────
 
 export interface HastToMastOptions {
-  /** 代码块样式：paragraph（转为段落）或 codeblock（转为代码块节点） */
-  codeBlockStyle?: 'paragraph' | 'codeblock';
+  // 预留扩展
 }
 
 export type ConversionWarningType = 'heading' | 'task-list' | 'footnote';
@@ -372,22 +371,14 @@ function convertBlock(
       }
     }
 
-    // codeBlockStyle: codeblock → 生成 MASTCodeBlock
-    if (opts.codeBlockStyle === 'codeblock') {
-      const block: MASTCodeBlock = {
-        id: newId(),
-        type: 'codeblock',
-        language,
-        content: rawText.replace(/\n$/, ''),
-      };
-      return [block];
-    }
-
-    // 默认 paragraph 模式：每行转为带 code 标记的 paragraph
-    const lines = rawText.replace(/\n$/, '').split('\n');
-    return lines.map((line) =>
-      makeParagraph([{ type: 'text', text: line, marks: { code: true } }])
-    );
+    // 围栏代码块 → 整块 MASTCodeBlock
+    const block: MASTCodeBlock = {
+      id: newId(),
+      type: 'codeblock',
+      language,
+      content: rawText.replace(/\n$/, ''),
+    };
+    return [block];
   }
 
   // ── 表格 ──────────────────────────────────────────────────────────────────
