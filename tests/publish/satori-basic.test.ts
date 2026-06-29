@@ -2,10 +2,15 @@ import { describe, it, expect } from 'vitest';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { readFile } from 'fs/promises';
+import { join } from 'path';
 
-// 使用系统 Arial Unicode 字体（支持中文）
+// 使用 bundled Noto Sans SC 字体
 async function loadFont(): Promise<Buffer> {
-  return readFile('/System/Library/Fonts/Supplemental/Arial Unicode.ttf');
+  return readFile(join(process.cwd(), 'src/publish/fonts/NotoSansSC-Regular.woff'));
+}
+
+async function loadBoldFont(): Promise<Buffer> {
+  return readFile(join(process.cwd(), 'src/publish/fonts/NotoSansSC-Bold.woff'));
 }
 
 describe('Satori + resvg-js 基础验证', () => {
