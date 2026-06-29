@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/momolibrary/md-to-mowen/compare/v1.8.3...v1.9.0) (2026-06-29)
+
+
+### Bug Fixes
+
+* 修复 ESLint 空接口报错 ([b261df8](https://github.com/momolibrary/md-to-mowen/commit/b261df878cdeba90922c66cc4e03bc111d67c4ad))
+
+
+### Features
+
+* 围栏代码块自动转为整块 codeblock，移除 codeBlockStyle 选项 ([ba99ad1](https://github.com/momolibrary/md-to-mowen/commit/ba99ad1f545ed9ac28516badfedd1524503cb2b3))
+
 ## [1.8.3](https://github.com/momolibrary/md-to-mowen/compare/v1.8.2...v1.8.3) (2026-06-29)
 
 
