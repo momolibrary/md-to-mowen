@@ -1,3 +1,15 @@
+# [1.8.0](https://github.com/momolibrary/md-to-mowen/compare/v1.7.0...v1.8.0) (2026-06-29)
+
+
+### Bug Fixes
+
+* satori 测试使用 bundled 字体替代系统字体 ([5cddde0](https://github.com/momolibrary/md-to-mowen/commit/5cddde0e8ee55646d93b663ef6866c6c5b9689d8))
+
+
+### Features
+
+* 表格渲染从 Playwright 迁移到 Satori + resvg-js ([eb0faa1](https://github.com/momolibrary/md-to-mowen/commit/eb0faa1dd399235afada5e064333197f0c99fd97))
+
 # [1.7.0](https://github.com/momolibrary/md-to-mowen/compare/v1.6.0...v1.7.0) (2026-06-29)
 
 
