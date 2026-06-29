@@ -3,8 +3,8 @@
   "version": "1.8.1",
   "type": "module",
   "description": "将 Markdown（GFM）转换为墨问笔记的 CLI 工具",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/publish/index.js",
+  "types": "./dist/publish/index.d.ts",
   "bin": {
     "md-to-mowen": "./dist/cli/index.js"
   },
@@ -25,7 +25,6 @@
     "test:coverage": "vitest run --coverage",
     "release": "semantic-release",
     "prepare": "husky",
-    "install:browser": "npx playwright install chromium",
     "prepublishOnly": "npm run build"
   },
   "repository": {
@@ -53,7 +52,6 @@
     "commander": "^12.0.0",
     "dotenv": "^16.0.0",
     "hast-util-to-string": "^3.0.0",
-    "playwright": "^1.40.0",
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.0.0",

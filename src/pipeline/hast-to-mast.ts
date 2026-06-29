@@ -398,7 +398,7 @@ function convertBlock(
       id: newId(),
       type: 'image',
       src: tableMarkdown,
-      alt: 'table',
+      alt: '',
       align: 'center',
       isTable: true,
     };
