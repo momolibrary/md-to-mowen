@@ -127,7 +127,7 @@ function convertCodeBlock(block: MASTCodeBlock): NoteAtomCodeBlock {
     attrs: {
       language: block.language,
     },
-    content: block.content,
+    content: [{ type: 'text', text: block.content }],
   };
 }
 

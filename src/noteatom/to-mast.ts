@@ -137,11 +137,13 @@ function convertCodeBlock(
   blocks: Record<MASTBlockId, MASTBlockNode>
 ): MASTBlockId {
   const id = newId();
+  // 将 NoteAtomTextNode[] 转换回纯文本字符串
+  const text = (block.content ?? []).map((node) => node.text).join('');
   const mast: MASTCodeBlock = {
     id,
     type: 'codeblock',
     language: block.attrs.language ?? '',
-    content: block.content ?? '',
+    content: text,
   };
   blocks[id] = mast;
   return id;

@@ -49,7 +49,7 @@ export interface NoteAtomCodeBlock {
   attrs: {
     language: string;
   };
-  content: string;
+  content: NoteAtomTextNode[];
 }
 
 export interface NoteAtomNote {
