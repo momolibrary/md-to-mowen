@@ -40,7 +40,11 @@ describe('readMetadata', () => {
     const data: MetadataStore = {
       version: 1,
       notes: {
-        '/path/to/file.md': { noteId: 'abc', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-02T00:00:00Z' },
+        '/path/to/file.md': {
+          noteId: 'abc',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-02T00:00:00Z',
+        },
       },
     };
     await writeFile(filePath, JSON.stringify(data), 'utf8');
@@ -238,7 +242,11 @@ describe('upsertNote', () => {
     const store: MetadataStore = {
       version: 1,
       notes: {
-        '/existing.md': { noteId: 'old-id', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
+        '/existing.md': {
+          noteId: 'old-id',
+          createdAt: '2026-01-01T00:00:00Z',
+          updatedAt: '2026-01-01T00:00:00Z',
+        },
       },
     };
 
@@ -266,9 +274,9 @@ describe('findMetadataPath', () => {
     expect(path).toContain('project');
   });
 
-  it('项目级不存在时返回项目级路径（待创建）', () => {
+  it('项目级不存在且用户级也不存在时返回项目级路径（待创建）', () => {
     const projectDir = join(testDir, 'empty-project');
-    const path = findMetadataPath(projectDir);
+    const path = findMetadataPath(projectDir, () => false);
     expect(path).toContain('empty-project');
   });
 });
@@ -314,7 +322,9 @@ describe('withLock', () => {
     writeMetadata(filePath, initialStore);
 
     // 创建一个过期锁（模拟进程崩溃残留）
-    const expiredLockTime = new Date(Date.now() - LOCK_CONSTANTS.LOCK_EXPIRE_MS - 1000).toISOString();
+    const expiredLockTime = new Date(
+      Date.now() - LOCK_CONSTANTS.LOCK_EXPIRE_MS - 1000
+    ).toISOString();
     await writeFile(lockPath, JSON.stringify({ pid: 99999, createdAt: expiredLockTime }), 'utf8');
 
     // 尝试写入，应该能成功获取过期锁

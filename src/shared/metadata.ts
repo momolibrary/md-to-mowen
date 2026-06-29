@@ -42,13 +42,16 @@ function emptyStore(): MetadataStore {
  * 项目级：CWD/.md-to-mowen/metadata.json
  * 用户级：~/.md-to-mowen/metadata.json
  */
-export function findMetadataPath(projectRoot?: string): string {
+export function findMetadataPath(
+  projectRoot?: string,
+  _exists: (p: string) => boolean = existsSync
+): string {
   const projectDir = projectRoot ?? process.cwd();
   const projectPath = join(projectDir, '.md-to-mowen', METADATA_FILENAME);
   const userPath = join(homedir(), '.md-to-mowen', METADATA_FILENAME);
 
-  if (existsSync(projectPath)) return projectPath;
-  if (existsSync(userPath)) return userPath;
+  if (_exists(projectPath)) return projectPath;
+  if (_exists(userPath)) return userPath;
   // 默认写入项目级
   return projectPath;
 }
