@@ -1,100 +1,212 @@
-import { chromium } from 'playwright';
+import satori from 'satori';
+import { Resvg } from '@resvg/resvg-js';
+import { readFile } from 'fs/promises';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ── 字体加载 ──────────────────────────────────────────────────────────────────
+
+let _fontCache: { regular: Buffer; bold: Buffer } | null = null;
+
+/** 加载字体（首次加载后缓存） */
+async function loadFonts(): Promise<{ regular: Buffer; bold: Buffer }> {
+  if (_fontCache) return _fontCache;
+
+  // 尝试加载 bundled 字体
+  const bundledDir = join(__dirname, 'fonts');
+  const regularPath = join(bundledDir, 'NotoSansSC-Regular.woff');
+  const boldPath = join(bundledDir, 'NotoSansSC-Bold.woff');
+
+  try {
+    _fontCache = {
+      regular: await readFile(regularPath),
+      bold: await readFile(boldPath),
+    };
+    return _fontCache;
+  } catch {
+    // fallback: 使用系统 Arial Unicode（macOS）
+    const systemFont = '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
+    try {
+      const data = await readFile(systemFont);
+      _fontCache = { regular: data, bold: data };
+      return _fontCache;
+    } catch {
+      throw new Error(
+        '找不到中文字体。请将 NotoSansSC-Regular.ttf 和 NotoSansSC-Bold.ttf 放到 src/publish/fonts/ 目录。'
+      );
+    }
+  }
+}
+
+// ── 表格渲染 ──────────────────────────────────────────────────────────────────
 
 /**
  * 将 Markdown 表格语法渲染为 PNG Buffer。
- * HTML/CSS 模板参考 table2image_pro.py（专业金融风格）。
+ * 使用 Satori（HTML→SVG）+ resvg-js（SVG→PNG）替代 Playwright。
  */
 export async function renderTableToPng(tableMarkdown: string): Promise<Buffer> {
-  const html = buildTableHtml(tableMarkdown);
+  const { headers, rows } = parseMarkdownTable(tableMarkdown);
+  const fonts = await loadFonts();
 
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const page = await browser.newPage();
-    await page.setViewportSize({ width: 1100, height: 800 });
-    await page.setContent(html, { waitUntil: 'networkidle' });
+  // 构建 Satori vnode（flexbox 布局模拟表格）
+  const vnode = buildTableVnode(headers, rows);
 
-    const element = await page.$('table');
-    if (!element) throw new Error('Table element not found in rendered HTML');
+  // Step 1: HTML/JSX → SVG
+  const svg = await satori(vnode, {
+    width: TABLE_WIDTH,
+    height: estimateHeight(headers, rows),
+    fonts: [
+      { name: 'Noto Sans SC', data: fonts.regular, weight: 400, style: 'normal' },
+      { name: 'Noto Sans SC', data: fonts.bold, weight: 700, style: 'normal' },
+    ],
+  });
 
-    const buffer = await element.screenshot({ type: 'png' });
-    return Buffer.from(buffer);
-  } finally {
-    await browser.close();
-  }
+  // Step 2: SVG → PNG
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: 'original' },
+  });
+  const pngData = resvg.render();
+  return Buffer.from(pngData.asPng());
 }
 
-// ── HTML 生成 ─────────────────────────────────────────────────────────────────
+// ── 常量 ──────────────────────────────────────────────────────────────────────
 
-function buildTableHtml(markdown: string): string {
-  const { headers, rows } = parseMarkdownTable(markdown);
-  const headerHtml = headers.map((h) => `<th>${escapeHtml(h)}</th>`).join('');
-  const rowsHtml = rows
-    .map((row) => {
-      const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join('');
-      return `<tr>${cells}</tr>`;
-    })
-    .join('\n');
+const TABLE_WIDTH = 1000;
+const FONT_SIZE = 14;
+const HEADER_PADDING_V = 12;
+const HEADER_PADDING_H = 16;
+const CELL_PADDING_V = 10;
+const CELL_PADDING_H = 16;
 
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  body {
-    margin: 20px;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-    background: #fff;
-  }
-  table {
-    border-collapse: collapse;
-    width: 1000px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    font-size: 14px;
-  }
-  thead tr {
-    background: linear-gradient(135deg, #1e3a5f, #2d4a6f);
-  }
-  thead th {
-    color: #fff;
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-  tbody tr:nth-child(odd) {
-    background: #fafbfc;
-  }
-  tbody tr:nth-child(even) {
-    background: #ffffff;
-  }
-  tbody tr:hover {
-    background: #eef3f9;
-  }
-  tbody td {
-    padding: 10px 16px;
-    color: #2c3e50;
-    border-bottom: 1px solid #e8ecf0;
-  }
-  tbody td:last-child, thead th:last-child {
-    border-right: none;
-  }
-  /* 数字列右对齐 */
-  tbody td.num {
-    text-align: right;
-    font-family: 'SF Mono', 'Menlo', monospace;
-  }
-</style>
-</head>
-<body>
-<table>
-  <thead><tr>${headerHtml}</tr></thead>
-  <tbody>${rowsHtml}</tbody>
-</table>
-</body>
-</html>`;
+const COLORS = {
+  headerGradientStart: '#1e3a5f',
+  headerGradientEnd: '#2d4a6f',
+  headerText: '#ffffff',
+  oddRowBg: '#fafbfc',
+  evenRowBg: '#ffffff',
+  cellText: '#2c3e50',
+  border: '#e8ecf0',
+};
+
+// ── VNode 构建 ────────────────────────────────────────────────────────────────
+
+/** 估算表格高度（用于 SVG viewport） */
+function estimateHeight(headers: string[], rows: string[][]): number {
+  const headerHeight = FONT_SIZE + HEADER_PADDING_V * 2;
+  const rowHeight = FONT_SIZE + CELL_PADDING_V * 2;
+  const borderHeight = rows.length; // 每行 1px border
+  return headerHeight + rows.length * rowHeight + borderHeight + 20; // 20px margin
 }
+
+/** 构建 Satori 兼容的 vnode 树（flexbox 布局模拟表格） */
+function buildTableVnode(headers: string[], rows: string[][]): Record<string, unknown> {
+  const colCount = headers.length || 1;
+  const colFlex = 1;
+
+  // 表头行
+  const headerCells = headers.map((h) => ({
+    type: 'div',
+    props: {
+      children: escapeHtml(h),
+      style: {
+        flex: colFlex,
+        padding: `${HEADER_PADDING_V}px ${HEADER_PADDING_H}px`,
+        fontSize: FONT_SIZE,
+        fontWeight: 700,
+        color: COLORS.headerText,
+        fontFamily: 'Noto Sans SC',
+      },
+    },
+  }));
+
+  // 数据行
+  const dataRows = rows.map((row, rowIndex) => {
+    const isOdd = rowIndex % 2 === 0;
+    const bgColor = isOdd ? COLORS.oddRowBg : COLORS.evenRowBg;
+
+    const cells = row.map((cell) => ({
+      type: 'div',
+      props: {
+        children: escapeHtml(cell),
+        style: {
+          flex: colFlex,
+          padding: `${CELL_PADDING_V}px ${CELL_PADDING_H}px`,
+          fontSize: FONT_SIZE,
+          color: COLORS.cellText,
+          fontFamily: 'Noto Sans SC',
+          borderBottom: `1px solid ${COLORS.border}`,
+        },
+      },
+    }));
+
+    // 补齐不足的列
+    while (cells.length < colCount) {
+      cells.push({
+        type: 'div',
+        props: {
+          children: '',
+          style: {
+            flex: colFlex,
+            padding: `${CELL_PADDING_V}px ${CELL_PADDING_H}px`,
+            fontSize: FONT_SIZE,
+            color: COLORS.cellText,
+            fontFamily: 'Noto Sans SC',
+            borderBottom: `1px solid ${COLORS.border}`,
+          },
+        },
+      });
+    }
+
+    return {
+      type: 'div',
+      props: {
+        children: cells,
+        style: {
+          display: 'flex',
+          flexDirection: 'row',
+          backgroundColor: bgColor,
+        },
+      },
+    };
+  });
+
+  // 整体容器
+  return {
+    type: 'div',
+    props: {
+      children: [
+        // 表头
+        {
+          type: 'div',
+          props: {
+            children: headerCells,
+            style: {
+              display: 'flex',
+              flexDirection: 'row',
+              backgroundImage: `linear-gradient(135deg, ${COLORS.headerGradientStart}, ${COLORS.headerGradientEnd})`,
+            },
+          },
+        },
+        // 数据行
+        ...dataRows,
+      ],
+      style: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: TABLE_WIDTH,
+        borderRadius: 8,
+        overflow: 'hidden',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+        margin: 20,
+        fontFamily: 'Noto Sans SC',
+      },
+    },
+  };
+}
+
+// ── 工具函数 ──────────────────────────────────────────────────────────────────
 
 function parseMarkdownTable(markdown: string): { headers: string[]; rows: string[][] } {
   const lines = markdown.trim().split('\n');
@@ -114,5 +226,9 @@ function parseMarkdownTable(markdown: string): { headers: string[]; rows: string
 }
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
