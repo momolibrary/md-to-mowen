@@ -3,11 +3,18 @@ import { writeFile, mkdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import type { MetadataStore } from '../../src/shared/metadata.js';
-import { listAllNotes, lookupFileStatus, formatStatusTable, formatStatusJson } from '../../src/cli/status.js';
+import {
+  listAllNotes,
+  lookupFileStatus,
+  formatStatusTable,
+  formatStatusJson,
+} from '../../src/cli/status.js';
 
 // ── 测试数据 ────────────────────────────────────────────────────────────────
 
-function makeStore(notes: Record<string, { noteId: string; createdAt: string; updatedAt: string }>): MetadataStore {
+function makeStore(
+  notes: Record<string, { noteId: string; createdAt: string; updatedAt: string }>
+): MetadataStore {
   return { version: 1, notes };
 }
 
@@ -40,7 +47,7 @@ describe('listAllNotes', () => {
       '/project/test.md': { noteId: 'xyz', createdAt: NOW, updatedAt: NOW },
     });
     const entries = listAllNotes(store, '/project');
-    expect(entries[0].noteUrl).toBe('https://mowen.cn/note/xyz');
+    expect(entries[0].noteUrl).toBe('https://note.mowen.cn/detail/xyz');
   });
 
   it('保留 createdAt 和 updatedAt', () => {
@@ -64,7 +71,7 @@ describe('lookupFileStatus', () => {
     expect(entry).not.toBeNull();
     expect(entry!.file).toBe('article.md');
     expect(entry!.noteId).toBe('abc');
-    expect(entry!.noteUrl).toBe('https://mowen.cn/note/abc');
+    expect(entry!.noteUrl).toBe('https://note.mowen.cn/detail/abc');
   });
 
   it('未命中时返回 null', () => {
@@ -92,7 +99,13 @@ describe('formatStatusTable', () => {
 
   it('包含表头', () => {
     const entries = [
-      { file: 'test.md', noteId: 'abc', noteUrl: 'https://mowen.cn/note/abc', createdAt: NOW, updatedAt: NOW },
+      {
+        file: 'test.md',
+        noteId: 'abc',
+        noteUrl: 'https://note.mowen.cn/detail/abc',
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
     ];
     const output = formatStatusTable(entries);
     expect(output).toContain('文件');
@@ -105,7 +118,7 @@ describe('formatStatusTable', () => {
       {
         file: 'posts/article.md',
         noteId: 'abc123',
-        noteUrl: 'https://mowen.cn/note/abc123',
+        noteUrl: 'https://note.mowen.cn/detail/abc123',
         createdAt: YESTERDAY,
         updatedAt: NOW,
       },
@@ -113,13 +126,25 @@ describe('formatStatusTable', () => {
     const output = formatStatusTable(entries);
     expect(output).toContain('posts/article.md');
     expect(output).toContain('abc123');
-    expect(output).toContain('https://mowen.cn/note/abc123');
+    expect(output).toContain('https://note.mowen.cn/detail/abc123');
   });
 
   it('多个条目正确对齐', () => {
     const entries = [
-      { file: 'a.md', noteId: 'id1', noteUrl: 'https://mowen.cn/note/id1', createdAt: NOW, updatedAt: NOW },
-      { file: 'b.md', noteId: 'id2', noteUrl: 'https://mowen.cn/note/id2', createdAt: NOW, updatedAt: NOW },
+      {
+        file: 'a.md',
+        noteId: 'id1',
+        noteUrl: 'https://note.mowen.cn/detail/id1',
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
+      {
+        file: 'b.md',
+        noteId: 'id2',
+        noteUrl: 'https://note.mowen.cn/detail/id2',
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
     ];
     const output = formatStatusTable(entries);
     expect(output).toContain('a.md');
@@ -134,7 +159,13 @@ describe('formatStatusTable', () => {
 describe('formatStatusJson', () => {
   it('输出合法 JSON', () => {
     const entries = [
-      { file: 'test.md', noteId: 'abc', noteUrl: 'https://mowen.cn/note/abc', createdAt: NOW, updatedAt: NOW },
+      {
+        file: 'test.md',
+        noteId: 'abc',
+        noteUrl: 'https://note.mowen.cn/detail/abc',
+        createdAt: NOW,
+        updatedAt: NOW,
+      },
     ];
     const output = formatStatusJson(entries);
     const parsed = JSON.parse(output);
