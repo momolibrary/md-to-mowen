@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mdToHast } from '../../src/pipeline/md-to-hast.js';
-import { hastToMast, _resetIdCounter, type ConversionWarning } from '../../src/pipeline/hast-to-mast.js';
+import {
+  hastToMast,
+  _resetIdCounter,
+  type ConversionWarning,
+} from '../../src/pipeline/hast-to-mast.js';
 import type {
   MASTDocument,
   MASTParagraphBlock,
@@ -13,11 +17,6 @@ import type {
 // 辅助：将 markdown 直接转为 MAST
 function parse(md: string): MASTDocument {
   return hastToMast(mdToHast(md)).doc;
-}
-
-// 辅助：将 markdown 转为 MAST，带选项
-function parseWithOptions(md: string, opts: { codeBlockStyle?: 'paragraph' | 'codeblock' }): MASTDocument {
-  return hastToMast(mdToHast(md), opts).doc;
 }
 
 // 辅助：获取转换警告
@@ -219,32 +218,18 @@ describe('引用块', () => {
 // ── 代码块 ─────────────────────────────────────────────────────────────────────
 
 describe('代码块', () => {
-  it('围栏代码块 → 每行 paragraph + code 标记', () => {
+  it('围栏代码块 → MASTCodeBlock', () => {
     const doc = parse('```\nconst x = 1;\nconst y = 2;\n```');
     const blocks = topBlocks(doc);
-    expect(blocks).toHaveLength(2);
-    for (const b of blocks) {
-      const p = b as MASTParagraphBlock;
-      expect(p.type).toBe('paragraph');
-      expect(p.content[0].marks?.code).toBe(true);
-    }
-    expect((blocks[0] as MASTParagraphBlock).content[0].text).toBe('const x = 1;');
-    expect((blocks[1] as MASTParagraphBlock).content[0].text).toBe('const y = 2;');
-  });
-
-  it('带语言标注的代码块', () => {
-    const doc = parse('```typescript\ntype Foo = string;\n```');
-    const blocks = topBlocks(doc);
     expect(blocks).toHaveLength(1);
-    expect((blocks[0] as MASTParagraphBlock).content[0].marks?.code).toBe(true);
+    const cb = blocks[0] as MASTCodeBlock;
+    expect(cb.type).toBe('codeblock');
+    expect(cb.language).toBe('');
+    expect(cb.content).toBe('const x = 1;\nconst y = 2;');
   });
 
-  // ── codeBlockStyle: codeblock ─────────────────────────────────────────────────
-
-  it('codeBlockStyle: codeblock → MASTCodeBlock', () => {
-    const doc = parseWithOptions('```typescript\ntype Foo = string;\n```', {
-      codeBlockStyle: 'codeblock',
-    });
+  it('带语言标注的代码块 → MASTCodeBlock 带 language', () => {
+    const doc = parse('```typescript\ntype Foo = string;\n```');
     const blocks = topBlocks(doc);
     expect(blocks).toHaveLength(1);
     const cb = blocks[0] as MASTCodeBlock;
@@ -253,44 +238,23 @@ describe('代码块', () => {
     expect(cb.content).toBe('type Foo = string;');
   });
 
-  it('codeBlockStyle: codeblock 无语言标注时 language 为空', () => {
-    const doc = parseWithOptions('```\nplain code\n```', {
-      codeBlockStyle: 'codeblock',
-    });
+  it('多行代码保留完整内容', () => {
+    const doc = parse('```js\nline1\nline2\nline3\n```');
+    const blocks = topBlocks(doc);
+    expect(blocks).toHaveLength(1);
+    const cb = blocks[0] as MASTCodeBlock;
+    expect(cb.type).toBe('codeblock');
+    expect(cb.content).toBe('line1\nline2\nline3');
+  });
+
+  it('无语言标注时 language 为空', () => {
+    const doc = parse('```\nplain code\n```');
     const blocks = topBlocks(doc);
     expect(blocks).toHaveLength(1);
     const cb = blocks[0] as MASTCodeBlock;
     expect(cb.type).toBe('codeblock');
     expect(cb.language).toBe('');
     expect(cb.content).toBe('plain code');
-  });
-
-  it('codeBlockStyle: codeblock 多行代码保留完整内容', () => {
-    const doc = parseWithOptions('```js\nline1\nline2\nline3\n```', {
-      codeBlockStyle: 'codeblock',
-    });
-    const blocks = topBlocks(doc);
-    expect(blocks).toHaveLength(1);
-    const cb = blocks[0] as MASTCodeBlock;
-    expect(cb.content).toBe('line1\nline2\nline3');
-  });
-
-  it('codeBlockStyle: paragraph 保持现有行为', () => {
-    const doc = parseWithOptions('```js\ncode line\n```', {
-      codeBlockStyle: 'paragraph',
-    });
-    const blocks = topBlocks(doc);
-    expect(blocks).toHaveLength(1);
-    const p = blocks[0] as MASTParagraphBlock;
-    expect(p.type).toBe('paragraph');
-    expect(p.content[0].marks?.code).toBe(true);
-  });
-
-  it('codeBlockStyle: 默认为 paragraph', () => {
-    const doc = parse('```js\ncode\n```');
-    const blocks = topBlocks(doc);
-    const p = blocks[0] as MASTParagraphBlock;
-    expect(p.type).toBe('paragraph');
   });
 });
 
@@ -435,8 +399,11 @@ console.log('hello');
     // 空行 → 空段落
     expect((blocks[8] as MASTParagraphBlock).content).toHaveLength(0);
 
-    // 代码块
-    expect((blocks[9] as MASTParagraphBlock).content[0].marks?.code).toBe(true);
+    // 代码块 → MASTCodeBlock
+    const cb = blocks[9] as MASTCodeBlock;
+    expect(cb.type).toBe('codeblock');
+    expect(cb.language).toBe('js');
+    expect(cb.content).toContain('console.log');
 
     // 空行 → 空段落
     expect((blocks[10] as MASTParagraphBlock).content).toHaveLength(0);
@@ -550,7 +517,9 @@ describe('有损转换警告', () => {
     for (let level = 2; level <= 6; level++) {
       const md = '#'.repeat(level) + ' 标题';
       const warnings = getWarnings(md);
-      expect(warnings.some((w) => w.type === 'heading' && w.message.includes(`H${level}`))).toBe(true);
+      expect(warnings.some((w) => w.type === 'heading' && w.message.includes(`H${level}`))).toBe(
+        true
+      );
     }
   });
 

@@ -19,8 +19,6 @@ export interface PublishOptions {
   dryRun?: boolean;
   /** 调试缓存目录，写入各阶段产物 */
   cacheDir?: string;
-  /** 代码块样式：paragraph（转为段落）或 codeblock（转为代码块节点） */
-  codeBlockStyle?: 'paragraph' | 'codeblock';
   /** 静默模式：抑制有损转换警告 */
   quiet?: boolean;
 }
@@ -55,15 +53,7 @@ export async function processFile(
   client: MowenClient,
   opts: PublishOptions = {}
 ): Promise<PublishResult> {
-  const {
-    noteId,
-    tags,
-    autoPublish = false,
-    dryRun = false,
-    cacheDir,
-    codeBlockStyle,
-    quiet = false,
-  } = opts;
+  const { noteId, tags, autoPublish = false, dryRun = false, cacheDir, quiet = false } = opts;
 
   // ── 阶段 00：读取文件 ────────────────────────────────────────────────────────
   const absPath = resolve(filePath);
@@ -75,7 +65,7 @@ export async function processFile(
   await writeCache(cacheDir, '01-hast.json', hast);
 
   // ── 阶段 02：HAST → MAST ─────────────────────────────────────────────────────
-  const { doc: mast, warnings } = hastToMast(hast, codeBlockStyle ? { codeBlockStyle } : {});
+  const { doc: mast, warnings } = hastToMast(hast);
   await writeCache(cacheDir, '02-mast.json', mast);
 
   // ── 有损转换警告 ───────────────────────────────────────────────────────────

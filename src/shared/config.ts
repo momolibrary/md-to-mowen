@@ -9,8 +9,6 @@ export interface MdToMowenConfig {
   defaultTags?: string;
   /** 是否默认自动发布 */
   autoPublish?: boolean;
-  /** 代码块样式：paragraph（转为段落）或 codeblock（转为代码块节点） */
-  codeBlockStyle?: 'paragraph' | 'codeblock';
   /** 缓存目录路径 */
   cacheDir?: string;
 }
@@ -18,14 +16,12 @@ export interface MdToMowenConfig {
 export interface ResolvedConfig {
   defaultTags: string;
   autoPublish: boolean;
-  codeBlockStyle: 'paragraph' | 'codeblock';
   cacheDir: string;
 }
 
 const DEFAULT_CONFIG: ResolvedConfig = {
   defaultTags: '',
   autoPublish: false,
-  codeBlockStyle: 'paragraph',
   cacheDir: 'out/pipeline-cache',
 };
 
@@ -42,17 +38,6 @@ function readEnvConfig(): Partial<MdToMowenConfig> {
   const autoPublish = process.env.MOWEN_AUTO_PUBLISH;
   if (autoPublish !== undefined) {
     config.autoPublish = autoPublish === 'true' || autoPublish === '1';
-  }
-
-  const codeBlockStyle = process.env.MOWEN_CODE_BLOCK_STYLE;
-  if (codeBlockStyle !== undefined) {
-    if (codeBlockStyle === 'paragraph' || codeBlockStyle === 'codeblock') {
-      config.codeBlockStyle = codeBlockStyle;
-    } else {
-      console.warn(
-        `[config] MOWEN_CODE_BLOCK_STYLE="${codeBlockStyle}" 无效，忽略（支持：paragraph, codeblock）`
-      );
-    }
   }
 
   const cacheDir = process.env.MOWEN_CACHE_DIR;
@@ -90,23 +75,12 @@ function loadConfigFile(path: string, label: string): ConfigFileResult | null {
       validConfig.autoPublish = parsed.autoPublish;
     }
 
-    if ('codeBlockStyle' in parsed) {
-      const style = parsed.codeBlockStyle;
-      if (style === 'paragraph' || style === 'codeblock') {
-        validConfig.codeBlockStyle = style;
-      } else {
-        console.warn(
-          `[config] ${label}: codeBlockStyle="${style}" 无效，忽略（支持：paragraph, codeblock）`
-        );
-      }
-    }
-
     if ('cacheDir' in parsed && typeof parsed.cacheDir === 'string') {
       validConfig.cacheDir = parsed.cacheDir;
     }
 
     // 未知字段忽略（向前兼容）
-    const knownKeys = ['defaultTags', 'autoPublish', 'codeBlockStyle', 'cacheDir'];
+    const knownKeys = ['defaultTags', 'autoPublish', 'cacheDir'];
     const unknownKeys = Object.keys(parsed).filter((k) => !knownKeys.includes(k));
     if (unknownKeys.length > 0) {
       console.warn(`[config] ${label}: 忽略未知字段 ${unknownKeys.join(', ')}`);
@@ -165,7 +139,6 @@ export function loadConfig(
   return {
     defaultTags: merged.defaultTags ?? DEFAULT_CONFIG.defaultTags,
     autoPublish: merged.autoPublish ?? DEFAULT_CONFIG.autoPublish,
-    codeBlockStyle: merged.codeBlockStyle ?? DEFAULT_CONFIG.codeBlockStyle,
     cacheDir: merged.cacheDir ?? DEFAULT_CONFIG.cacheDir,
   };
 }

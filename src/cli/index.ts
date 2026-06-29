@@ -158,7 +158,6 @@ program
   .option('--auto-publish', '自动发布（非草稿），覆盖配置文件 autoPublish', false)
   .option('--dry-run', '走完流水线但不调用墨问 API，仅打印统计', false)
   .option('--cache-dir <dir>', '保存各阶段产物的目录（调试用）')
-  .option('--code-block-style <style>', '代码块样式：paragraph 或 codeblock')
   .option('--no-recursive', '批量发布时不递归扫描子目录', false)
   .option('--quiet', '静默模式：抑制进度条，仅输出最终汇总', false)
   .action(async (opts) => {
@@ -187,15 +186,6 @@ program
     }
     if (opts.cacheDir) {
       cliOverrides.cacheDir = opts.cacheDir;
-    }
-    if (opts.codeBlockStyle) {
-      const style = opts.codeBlockStyle as string;
-      if (style === 'paragraph' || style === 'codeblock') {
-        cliOverrides.codeBlockStyle = style;
-      } else {
-        console.error(`错误：--code-block-style="${style}" 无效，支持：paragraph, codeblock`);
-        process.exit(1);
-      }
     }
 
     const resolvedConfig = loadConfig(cliOverrides, inputDir);
@@ -246,7 +236,6 @@ program
             autoPublish: resolvedConfig.autoPublish,
             dryRun: opts.dryRun,
             cacheDir: resolvedConfig.cacheDir,
-            codeBlockStyle: resolvedConfig.codeBlockStyle,
             quiet: opts.quiet,
           });
 
