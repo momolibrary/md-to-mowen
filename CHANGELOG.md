@@ -1,3 +1,11 @@
+## [1.8.1](https://github.com/momolibrary/md-to-mowen/compare/v1.8.0...v1.8.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* 移除未使用的 parseSvgSize 函数 ([d3b7930](https://github.com/momolibrary/md-to-mowen/commit/d3b7930dd4ec6d056f94e1e1dd8315f60e5949a3))
+* 重构表格渲染高度计算，Satori 自动测算实现四边等距 ([120b941](https://github.com/momolibrary/md-to-mowen/commit/120b9418b486600aa05f81237f20a00aff3be6b4))
+
 # [1.8.0](https://github.com/momolibrary/md-to-mowen/compare/v1.7.0...v1.8.0) (2026-06-29)
 
 
