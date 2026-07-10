@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mastToNoteAtom } from '../../src/noteatom/from-mast.js';
 import type { MASTDocument } from '../../src/mast/types.js';
-import type { NoteAtomParagraph, NoteAtomQuote, NoteAtomImage, NoteAtomAudio } from '../../src/noteatom/types.js';
+import type {
+  NoteAtomParagraph,
+  NoteAtomQuote,
+  NoteAtomImage,
+  NoteAtomAudio,
+} from '../../src/noteatom/types.js';
 
 function makeDoc(blocks: Record<string, any>, topLevel: string[]): MASTDocument {
   return { blocks, topLevel } as MASTDocument;
@@ -9,7 +14,10 @@ function makeDoc(blocks: Record<string, any>, topLevel: string[]): MASTDocument 
 
 describe('段落序列化', () => {
   it('普通文本 → paragraph + text node', () => {
-    const doc = makeDoc({ b_1: { id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: 'hello' }] } }, ['b_1']);
+    const doc = makeDoc(
+      { b_1: { id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: 'hello' }] } },
+      ['b_1']
+    );
     const na = mastToNoteAtom(doc);
     expect(na.type).toBe('doc');
     expect(na.content).toHaveLength(1);
@@ -37,7 +45,7 @@ describe('行内标记序列化', () => {
           content: [{ type: 'text', text: 'text', marks }],
         },
       },
-      ['b_1'],
+      ['b_1']
     );
   }
 
@@ -97,7 +105,7 @@ describe('行内标记序列化', () => {
         strikethrough: true,
         highlight: true,
         link: 'https://x.com',
-      }),
+      })
     );
     const p = na.content[0] as NoteAtomParagraph;
     const types = p.content[0].marks!.map((m) => m.type);
@@ -106,7 +114,7 @@ describe('行内标记序列化', () => {
 });
 
 describe('引用块序列化', () => {
-  it('quote → NoteAtomQuote with paragraph children', () => {
+  it('quote → NoteAtomQuote with inline text children', () => {
     const doc = makeDoc(
       {
         b_q: {
@@ -120,14 +128,28 @@ describe('引用块序列化', () => {
           content: [{ type: 'text', text: '引用内容' }],
         },
       },
-      ['b_q'],
+      ['b_q']
     );
     const na = mastToNoteAtom(doc);
     const q = na.content[0] as NoteAtomQuote;
     expect(q.type).toBe('quote');
     expect(q.content).toHaveLength(1);
-    expect(q.content[0].type).toBe('paragraph');
-    expect(q.content[0].content[0].text).toBe('引用内容');
+    expect(q.content[0].type).toBe('text');
+    expect(q.content[0].text).toBe('引用内容');
+  });
+
+  it('多段 quote → text 数组，段间用 \\n 分隔', () => {
+    const doc = makeDoc(
+      {
+        b_q: { id: 'b_q', type: 'quote', children: ['b_p1', 'b_p2'] },
+        b_p1: { id: 'b_p1', type: 'paragraph', content: [{ type: 'text', text: '第一段' }] },
+        b_p2: { id: 'b_p2', type: 'paragraph', content: [{ type: 'text', text: '第二段' }] },
+      },
+      ['b_q']
+    );
+    const na = mastToNoteAtom(doc);
+    const q = na.content[0] as NoteAtomQuote;
+    expect(q.content.map((n) => n.text)).toEqual(['第一段', '\n', '第二段']);
   });
 });
 
@@ -144,7 +166,7 @@ describe('图片序列化', () => {
           align: 'center',
         },
       },
-      ['b_img'],
+      ['b_img']
     );
     const na = mastToNoteAtom(doc);
     const img = na.content[0] as NoteAtomImage;
@@ -165,7 +187,7 @@ describe('图片序列化', () => {
           align: 'center',
         },
       },
-      ['b_img'],
+      ['b_img']
     );
     expect(() => mastToNoteAtom(doc)).toThrow('no uuid');
   });
@@ -183,7 +205,7 @@ describe('音频序列化', () => {
           showNote: '00:00 开场\n01:00 结尾',
         },
       },
-      ['b_audio'],
+      ['b_audio']
     );
     const na = mastToNoteAtom(doc);
     const audio = na.content[0] as NoteAtomAudio;
@@ -202,7 +224,7 @@ describe('音频序列化', () => {
           showNote: '',
         },
       },
-      ['b_audio'],
+      ['b_audio']
     );
     expect(() => mastToNoteAtom(doc)).toThrow('no uuid');
   });
@@ -218,7 +240,7 @@ describe('音频序列化', () => {
           showNote: '',
         },
       },
-      ['b_audio'],
+      ['b_audio']
     );
     const na = mastToNoteAtom(doc);
     const audio = na.content[0] as NoteAtomAudio;
@@ -249,7 +271,7 @@ describe('综合文档', () => {
           showNote: '00:00 开始',
         },
       },
-      ['b_1', 'b_2', 'b_4', 'b_5'],
+      ['b_1', 'b_2', 'b_4', 'b_5']
     );
     const na = mastToNoteAtom(doc);
     expect(na.content[0].type).toBe('paragraph');

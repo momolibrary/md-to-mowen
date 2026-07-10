@@ -121,7 +121,7 @@ interface NoteAtomDoc {
 
 type NoteAtomBlockNode =
   | { type: 'paragraph'; content: NoteAtomTextNode[] }
-  | { type: 'quote'; content: NoteAtomParagraph[] }
+  | { type: 'quote'; content: NoteAtomTextNode[] }
   | { type: 'image'; attrs: { uuid: string; alt: string; align: string } }
   | { type: 'audio'; attrs: { uuid: string; showNote: string } }
   | { type: 'codeblock'; attrs: { language: string }; content: NoteAtomTextNode[] };

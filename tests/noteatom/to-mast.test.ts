@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { noteAtomToMast } from '../../src/noteatom/to-mast.js';
 import type { NoteAtomDoc } from '../../src/noteatom/types.js';
-import type { MASTParagraphBlock, MASTQuoteBlock, MASTImageBlock, MASTAudioBlock } from '../../src/mast/types.js';
+import type {
+  MASTParagraphBlock,
+  MASTQuoteBlock,
+  MASTImageBlock,
+  MASTAudioBlock,
+} from '../../src/mast/types.js';
 
 function topBlocks(doc: ReturnType<typeof noteAtomToMast>) {
   return doc.topLevel.map((id) => doc.blocks[id]);
@@ -43,7 +48,13 @@ describe('NoteAtom → MAST 段落', () => {
       content: [
         {
           type: 'paragraph',
-          content: [{ type: 'text', text: 'click', marks: [{ type: 'link', attrs: { href: 'https://x.com' } }] }],
+          content: [
+            {
+              type: 'text',
+              text: 'click',
+              marks: [{ type: 'link', attrs: { href: 'https://x.com' } }],
+            },
+          ],
         },
       ],
     };
@@ -72,7 +83,7 @@ describe('NoteAtom → MAST 引用块', () => {
       content: [
         {
           type: 'quote',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: '引用内容' }] }],
+          content: [{ type: 'text', text: '引用内容' }],
         },
       ],
     };
@@ -85,15 +96,16 @@ describe('NoteAtom → MAST 引用块', () => {
     expect(child.content[0].text).toBe('引用内容');
   });
 
-  it('多行引用 → 多个子段落', () => {
+  it('多行引用 → 按 \\n 拆成多个子段落', () => {
     const na: NoteAtomDoc = {
       type: 'doc',
       content: [
         {
           type: 'quote',
           content: [
-            { type: 'paragraph', content: [{ type: 'text', text: '第一行' }] },
-            { type: 'paragraph', content: [{ type: 'text', text: '第二行' }] },
+            { type: 'text', text: '第一行' },
+            { type: 'text', text: '\n' },
+            { type: 'text', text: '第二行' },
           ],
         },
       ],
@@ -101,6 +113,10 @@ describe('NoteAtom → MAST 引用块', () => {
     const mast = noteAtomToMast(na);
     const q = topBlocks(mast)[0] as MASTQuoteBlock;
     expect(q.children).toHaveLength(2);
+    const first = mast.blocks[q.children[0]] as MASTParagraphBlock;
+    expect(first.content[0].text).toBe('第一行');
+    const second = mast.blocks[q.children[1]] as MASTParagraphBlock;
+    expect(second.content[0].text).toBe('第二行');
   });
 });
 

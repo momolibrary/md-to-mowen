@@ -52,10 +52,10 @@ interface NoteAtomParagraph {
   content: NoteAtomTextNode[];
 }
 
-// Quote：引用块容器
+// Quote：引用块容器（content 为行内文本数组，非 paragraph）
 interface NoteAtomQuote {
   type: 'quote';
-  content: NoteAtomParagraph[];
+  content: NoteAtomTextNode[];
 }
 
 // Image：已上传文件引用
