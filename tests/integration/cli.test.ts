@@ -33,5 +33,6 @@ describe('CLI', () => {
     expect(stdout).toContain('status');
     expect(stdout).toContain('privacy');
     expect(stdout).toContain('install-skill');
+    expect(stdout).toContain('whoami');
   });
 });

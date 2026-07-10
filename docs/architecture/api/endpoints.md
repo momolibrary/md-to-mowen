@@ -140,6 +140,64 @@ POST /api/open/api/v1/auth/key/reset
 
 ---
 
+## 获取当前账号 Profile
+
+> 用于 `whoami` 校验登录态。在线文档：<https://mowen.apifox.cn/>
+
+```
+GET /api/open/api/v1/my/profile
+```
+
+只读接口，**GET** 请求（例外于「所有接口使用 POST」的惯例），无需请求体。用于验证当前 API Key 是否有效并回显账号信息。
+
+### 响应体
+
+```json
+{
+  "profile": {
+    "base": {
+      "uid": "j8drCp_T4fh3ERzT2Cedr",
+      "name": "八老师不摄影",
+      "intro": "一个会看英文guide的产品总监的私人笔记",
+      "confirmed": true,
+      "remindedAt": "1707404119",
+      "createdAt": "1707403047"
+    },
+    "avatar": null,
+    "relation": null,
+    "member": {
+      "status": { "pro": 64 },
+      "code": "V-4QTUK1CMQH",
+      "expiredAt": "1845383306889"
+    },
+    "extra": null
+  }
+}
+```
+
+| 字段                        | 类型   | 说明                           |
+| --------------------------- | ------ | ------------------------------ |
+| `profile.base.uid`          | string | 用户 UID                       |
+| `profile.base.name`         | string | 昵称                           |
+| `profile.base.intro`        | string | 简介                           |
+| `profile.member.status.pro` | number | Pro 会员状态码，`> 0` 表示有效 |
+| `profile.member.expiredAt`  | string | 会员到期时间戳（毫秒，字符串） |
+
+### 鉴权失败
+
+API Key 无效或已失效时返回 HTTP 400：
+
+```json
+{
+  "code": 400,
+  "reason": "LOGIN",
+  "message": "service.v1 [BaseService.Login]: invalid api key.",
+  "metadata": {}
+}
+```
+
+---
+
 ## 获取上传授权信息
 
 > 在线文档：<https://mowen.apifox.cn/304801589e0>

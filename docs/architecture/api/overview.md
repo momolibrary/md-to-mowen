@@ -80,9 +80,13 @@ https://mowen.cn/note/{noteId}
 | 分类             | 接口                 | 路径                                   |
 | ---------------- | -------------------- | -------------------------------------- |
 | 授权             | API-KEY 重置         | `POST /api/open/api/v1/auth/key/reset` |
+| 授权             | 鉴权 ping            | `GET /api/open/api/v1/auth/echo`       |
+| 账号             | 获取当前账号 Profile | `GET /api/open/api/v1/my/profile`      |
 | 笔记             | 笔记创建             | `POST /api/open/api/v1/note/create`    |
 | 笔记             | 笔记编辑             | `POST /api/open/api/v1/note/edit`      |
 | 笔记             | 笔记设置             | `POST /api/open/api/v1/note/set`       |
 | 文件上传（本地） | 获取上传授权信息     | `POST /api/open/api/v1/upload/prepare` |
 | 文件上传（本地） | 文件投递（OSS 直传） | `POST {form.endpoint}`                 |
 | 文件上传（远程） | 基于 URL 上传文件    | `POST /api/open/api/v1/upload/url`     |
+
+> 注：`auth/echo` 与 `my/profile` 为 **GET** 请求（例外于「所有接口使用 POST」的惯例），用于 `whoami` 校验登录态。`auth/echo` 仅返回 `{ "uid": "..." }`；`my/profile` 返回完整 Profile（账号名 / 会员状态等）。鉴权失败时返回 `{ "code": 400, "reason": "LOGIN", "message": "invalid api key." }`。

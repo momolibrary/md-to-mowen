@@ -79,7 +79,54 @@ describe('MowenClient', () => {
         json: async () => ({ code: 40001, reason: '无权限操作该笔记' }),
       });
 
-      await expect(client.setPrivacy('note-other', 'private')).rejects.toThrow('[40001] 无权限操作该笔记');
+      await expect(client.setPrivacy('note-other', 'private')).rejects.toThrow(
+        '[40001] 无权限操作该笔记'
+      );
+    });
+  });
+
+  describe('getMyProfile', () => {
+    it('以 GET 方式调用 my/profile 并返回 profile 对象', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          profile: {
+            base: { uid: 'u1', name: '墨问用户', intro: 'intro' },
+            member: { status: { pro: 64 }, code: 'V-XXX', expiredAt: '1845383306889' },
+          },
+        }),
+      });
+
+      const profile = await client.getMyProfile();
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [url, options] = mockFetch.mock.calls[0];
+      expect(url).toBe('https://open.mowen.cn/api/open/api/v1/my/profile');
+      expect(options.method).toBe('GET');
+      expect(options.body).toBeUndefined();
+      expect(profile.base.uid).toBe('u1');
+      expect(profile.base.name).toBe('墨问用户');
+      expect(profile.member?.status?.pro).toBe(64);
+    });
+
+    it('Key 无效时抛出 MowenApiError 并携带 reason=LOGIN', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        json: async () => ({ code: 400, reason: 'LOGIN', message: 'invalid api key.' }),
+      });
+
+      try {
+        await client.getMyProfile();
+        expect.unreachable('应抛出 MowenApiError');
+      } catch (e) {
+        expect(e).toBeInstanceOf(MowenApiError);
+        const err = e as MowenApiError;
+        expect(err.code).toBe(400);
+        expect(err.reason).toBe('LOGIN');
+        expect(err.message).toBe('[400] LOGIN');
+      }
     });
   });
 });
