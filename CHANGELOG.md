@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/momolibrary/md-to-mowen/compare/v1.9.1...v1.9.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* 修复 quote 引用块在墨问编辑器渲染失败 ([d79f7e7](https://github.com/momolibrary/md-to-mowen/commit/d79f7e7584a02323c96a06ebd1235ff797eb78b2)), closes [#36](https://github.com/momolibrary/md-to-mowen/issues/36)
+
 ## [1.9.1](https://github.com/momolibrary/md-to-mowen/compare/v1.9.0...v1.9.1) (2026-06-29)
 
 
