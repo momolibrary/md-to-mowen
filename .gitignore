@@ -8,4 +8,5 @@ dist/
 release-artifacts/
 .DS_Store
 out/
-metadata.json.md-to-mowen/
+metadata.json
+.md-to-mowen/
