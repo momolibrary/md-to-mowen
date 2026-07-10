@@ -33,6 +33,30 @@ export type FileType = 1 | 2 | 3; // 1=图片, 2=音频, 3=PDF
 export type Visibility = 'public' | 'private';
 
 /**
+ * 当前账号 Profile（GET /api/open/api/v1/my/profile 返回的 profile 对象）
+ */
+export interface MowenProfile {
+  base: {
+    uid: string;
+    name: string;
+    intro?: string;
+    confirmed?: boolean;
+    remindedAt?: string;
+    createdAt?: string;
+  };
+  avatar?: unknown;
+  relation?: unknown;
+  member?: {
+    /** 各会员计划的状态码，如 { pro: 64 }；> 0 表示有效 */
+    status?: Record<string, number>;
+    code?: string;
+    /** 到期时间戳（毫秒，字符串） */
+    expiredAt?: string;
+  };
+  extra?: unknown;
+}
+
+/**
  * 墨问 API 客户端
  */
 export class MowenClient {
@@ -50,35 +74,53 @@ export class MowenClient {
     };
   }
 
-  private async request<T>(path: string, body: unknown): Promise<T> {
-    const res = await withRetry(
-      () =>
-        fetch(`${BASE_URL}${path}`, {
-          method: 'POST',
-          headers: this.headers,
-          body: JSON.stringify(body),
-        }),
-      {
-        shouldRetry: (err) => {
-          // 网络错误重试；4xx 不重试
-          if (err instanceof MowenApiError && err.code < 500) return false;
-          return true;
-        },
+  private async request<T>(
+    path: string,
+    body?: unknown,
+    method: 'POST' | 'GET' = 'POST'
+  ): Promise<T> {
+    const init: RequestInit = { method, headers: this.headers };
+    // GET 请求不带 body；POST 序列化请求体
+    if (method !== 'GET' && body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+
+    const res = await withRetry(() => fetch(`${BASE_URL}${path}`, init), {
+      shouldRetry: (err) => {
+        // 网络错误重试；4xx 不重试
+        if (err instanceof MowenApiError && err.code < 500) return false;
+        return true;
       },
-    );
+    });
 
     const data = (await res.json()) as { code?: number; reason?: string } & T;
 
     if (!res.ok || data.code) {
-      throw new MowenApiError(data.code ?? res.status, data.reason ?? res.statusText);
+      throw new MowenApiError(data.code ?? res.status, data.reason ?? res.statusText, data.reason);
     }
 
     return data;
   }
 
+  /**
+   * 获取当前 API Key 对应账号的 Profile（只读，GET）。
+   * 用于 whoami 校验登录态：成功说明 Key 有效，reason=LOGIN 说明 Key 无效。
+   */
+  async getMyProfile(): Promise<MowenProfile> {
+    const data = await this.request<{ profile: MowenProfile }>(
+      '/api/open/api/v1/my/profile',
+      undefined,
+      'GET'
+    );
+    return data.profile;
+  }
+
   /** 获取 OSS 上传凭证（本地上传第一步） */
   async uploadPrepare(fileType: FileType, fileName: string): Promise<UploadForm> {
-    const res = await this.request<UploadPrepareResponse>('/api/open/api/v1/upload/prepare', { fileType, fileName });
+    const res = await this.request<UploadPrepareResponse>('/api/open/api/v1/upload/prepare', {
+      fileType,
+      fileName,
+    });
     return res.form;
   }
 
@@ -93,7 +135,10 @@ export class MowenClient {
   }
 
   /** 创建笔记，返回 noteId */
-  async createNote(body: unknown, settings?: { autoPublish?: boolean; tags?: string[] }): Promise<string> {
+  async createNote(
+    body: unknown,
+    settings?: { autoPublish?: boolean; tags?: string[] }
+  ): Promise<string> {
     const res = await this.request<{ noteId: string }>('/api/open/api/v1/note/create', {
       body,
       settings: settings ?? {},
@@ -121,11 +166,14 @@ export class MowenClient {
 }
 
 export class MowenApiError extends Error {
+  readonly reason?: string;
   constructor(
     public readonly code: number,
     message: string,
+    reason?: string
   ) {
     super(`[${code}] ${message}`);
     this.name = 'MowenApiError';
+    this.reason = reason;
   }
 }
