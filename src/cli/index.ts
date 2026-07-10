@@ -9,7 +9,7 @@ import { createInterface } from 'readline';
 import { lstat } from 'fs/promises';
 import { processFile } from '../publish/process-file.js';
 import { processDirectory } from '../publish/process-directory.js';
-import { MowenClient, Visibility } from '../mowen/client.js';
+import { MowenClient, MowenApiError, Visibility } from '../mowen/client.js';
 import { noteAtomToMast } from '../noteatom/to-mast.js';
 import { mastToMarkdown } from '../mast/to-markdown.js';
 import {
@@ -20,6 +20,13 @@ import {
   upsertNote,
 } from '../shared/metadata.js';
 import { loadConfig, type MdToMowenConfig } from '../shared/config.js';
+import {
+  formatWhoamiText,
+  formatWhoamiJson,
+  maskApiKey,
+  isAuthError,
+  type WhoamiResult,
+} from './whoami.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -62,6 +69,44 @@ function loadEnvConfig(): string[] {
 
 function getApiKey(): string | undefined {
   return process.env.MOWEN_API_KEY;
+}
+
+/**
+ * 探测 MOWEN_API_KEY 的来源：按优先级扫描 3 个 .env 文件，
+ * 返回首个值与当前进程环境变量一致的文件路径（home 目录以 ~ 显示，避免 PII）。
+ * 若都不一致或仅存在于 shell 环境变量，返回 '环境变量'。仅作展示提示。
+ */
+function getApiKeySource(): string | null {
+  const envKey = process.env.MOWEN_API_KEY;
+  if (!envKey) return null;
+
+  const locations = searchEnvPaths();
+  const home = homedir();
+  for (const loc of locations) {
+    if (!existsSync(loc.path)) continue;
+    const raw = readFileSync(loc.path, 'utf8');
+    const line = raw.split('\n').find((l) => /^MOWEN_API_KEY\s*=\s*\S/.test(l));
+    if (!line) continue;
+
+    // 提取文件中的值并去除首尾引号（与 dotenv 解析一致）
+    let fileKey = line.replace(/^MOWEN_API_KEY\s*=\s*/, '').trim();
+    if (
+      (fileKey.startsWith('"') && fileKey.endsWith('"')) ||
+      (fileKey.startsWith("'") && fileKey.endsWith("'"))
+    ) {
+      fileKey = fileKey.slice(1, -1);
+    }
+
+    if (fileKey === envKey) {
+      return loc.path.startsWith(home) ? `~${loc.path.slice(home.length)}` : loc.path;
+    }
+  }
+  return '环境变量';
+}
+
+/** 输出 whoami 结果（文本或 JSON） */
+function outputWhoami(json: boolean, result: WhoamiResult): void {
+  console.log(json ? formatWhoamiJson(result) : formatWhoamiText(result));
 }
 
 function getEnvWritePath(): string {
@@ -145,6 +190,76 @@ program
     }
 
     saveApiKey(apiKey);
+  });
+
+// ── whoami ────────────────────────────────────────────────────────────────────
+
+program
+  .command('whoami')
+  .description('验证墨问登录是否已配置并有效')
+  .option('--local', '跳过联网验证，仅检查本地配置', false)
+  .option('--json', '输出 JSON 格式', false)
+  .action(async (opts) => {
+    const apiKey = getApiKey();
+    const source = getApiKeySource();
+
+    // 未配置
+    if (!apiKey) {
+      outputWhoami(opts.json, {
+        configured: false,
+        verified: false,
+        authenticated: false,
+        maskedKey: null,
+        source,
+        profile: null,
+        error: null,
+      });
+      process.exit(1);
+    }
+
+    const base: WhoamiResult = {
+      configured: true,
+      verified: false,
+      authenticated: null,
+      maskedKey: maskApiKey(apiKey),
+      source,
+      profile: null,
+      error: null,
+    };
+
+    // --local：跳过联网验证
+    if (opts.local) {
+      outputWhoami(opts.json, base);
+      return;
+    }
+
+    // 联网验证
+    const client = new MowenClient(apiKey);
+    try {
+      const profile = await client.getMyProfile();
+      outputWhoami(opts.json, { ...base, verified: true, authenticated: true, profile });
+    } catch (err) {
+      if (err instanceof MowenApiError && isAuthError(err)) {
+        // 鉴权失败：Key 无效或已失效
+        outputWhoami(opts.json, {
+          ...base,
+          verified: true,
+          authenticated: false,
+          error: { code: err.code, reason: err.reason, message: err.message },
+        });
+        process.exit(1);
+      }
+      // 其它错误（网络 / 服务端错误）：本地兜底，不阻断
+      outputWhoami(opts.json, {
+        ...base,
+        verified: false,
+        authenticated: null,
+        error: {
+          message: err instanceof Error ? err.message : String(err),
+          ...(err instanceof MowenApiError ? { code: err.code, reason: err.reason } : {}),
+        },
+      });
+    }
   });
 
 // ── publish ────────────────────────────────────────────────────────────────────

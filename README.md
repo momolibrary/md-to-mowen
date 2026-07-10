@@ -53,6 +53,26 @@ md-to-mowen lint article.md --min-chars 200 --max-chars 5000
 md-to-mowen upload image.png
 ```
 
+### 验证登录状态
+
+```bash
+# 联网验证 API Key 是否有效，并回显账号信息
+md-to-mowen whoami
+
+# 跳过联网，仅检查本地是否已配置（离线/CI 友好）
+md-to-mowen whoami --local
+
+# JSON 输出（便于脚本解析）
+md-to-mowen whoami --json
+```
+
+`whoami` 会调用墨问 `GET /api/open/api/v1/my/profile` 校验当前 `MOWEN_API_KEY`：
+
+- 已登录 → 回显脱敏 Key、账号名、UID、会员状态（退出码 0）
+- Key 无效或已失效（如被重置）→ 提示重新配置（退出码 1）
+- 未配置 → 提示运行 `md-to-mowen config`（退出码 1）
+- `--local` 或联网失败 → 显示「已配置（未联网验证）」（退出码 0）
+
 ## 配置
 
 ### API Key

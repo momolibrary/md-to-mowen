@@ -60,6 +60,21 @@ md-to-mowen privacy -i article.md --visibility private
 md-to-mowen config
 ```
 
+### whoami — 验证登录状态
+
+```bash
+md-to-mowen whoami            # 联网校验 API Key 并回显账号信息
+md-to-mowen whoami --local    # 跳过联网，仅检查本地配置
+md-to-mowen whoami --json     # JSON 输出
+```
+
+| 选项      | 说明                                                      |
+| --------- | --------------------------------------------------------- |
+| `--local` | 跳过联网验证，仅检查本地是否已配置 Key                    |
+| `--json`  | 输出 JSON（含 configured / authenticated / profile 字段） |
+
+联网调用 `GET /api/open/api/v1/my/profile`：已登录回显账号名 / UID / 会员状态（exit 0）；Key 失效或未配置 exit 1；联网失败时本地兜底 exit 0。
+
 ## 支持的 Markdown 特性
 
 | 特性       | 支持 | 说明                |
