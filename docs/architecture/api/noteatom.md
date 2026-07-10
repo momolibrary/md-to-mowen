@@ -40,9 +40,13 @@ interface NoteAtomParagraph {
 ```typescript
 interface NoteAtomQuote {
   type: 'quote';
-  content: NoteAtomParagraph[]; // 只能包含 paragraph
+  content: NoteAtomTextNode[]; // 行内文本节点（墨问 quote 直接持有 text，不含 paragraph）
 }
 ```
+
+> ⚠️ 墨问 quote 节点的 `content` 是**行内文本数组**（`text` 节点），不是 `paragraph` 数组。
+> 多段引用块用 `{ type: 'text', text: '\n' }` 分隔。若误用 `paragraph` 子节点，
+> 墨问编辑器加载笔记时会报 `Invalid content for node quote: <paragraph(...)>`（「编辑器内容含有不支持的格式」）。
 
 ### image（图片）
 
@@ -101,6 +105,22 @@ type NoteAtomMark =
 
 ---
 
+## 节点 content 类型对照
+
+> 以下结构来自墨问官方 API 文档 NoteAtom 示例（<https://mowen.apifox.cn/6682171m0>，2025-06-10）。
+> 墨问块节点的「行内内容」统一用 `text` 节点数组表达，**不要套 `paragraph`**。
+
+| 节点                         | content 类型           | 说明                                            |
+| ---------------------------- | ---------------------- | ----------------------------------------------- |
+| `paragraph`                  | `NoteAtomTextNode[]`   | 行内文本                                        |
+| `quote`                      | `NoteAtomTextNode[]`   | 行内文本，多段用 `{type:'text',text:'\n'}` 分隔 |
+| `codeblock`                  | `NoteAtomTextNode[]`   | 代码文本（`[{type:'text',text:code}]`）         |
+| `image`/`audio`/`note`/`pdf` | 无 content，用 `attrs` | 资源型节点                                      |
+
+历史教训：`quote` 与 `codeblock` 都曾误把 `content` 写成块/字符串结构，导致墨问编辑器加载报「不支持的格式」（见 git `00850c1` codeblock 修复、本次 quote 修复）。
+
+---
+
 ## 关键约束
 
 墨问不支持以下原生格式，需在转换时处理：
@@ -133,17 +153,16 @@ type NoteAtomMark =
         { "type": "text", "text": "普通文字，" },
         { "type": "text", "text": "粗体", "marks": [{ "type": "bold" }] },
         { "type": "text", "text": "，" },
-        { "type": "text", "text": "链接", "marks": [{ "type": "link", "attrs": { "href": "https://example.com" } }] }
+        {
+          "type": "text",
+          "text": "链接",
+          "marks": [{ "type": "link", "attrs": { "href": "https://example.com" } }]
+        }
       ]
     },
     {
       "type": "quote",
-      "content": [
-        {
-          "type": "paragraph",
-          "content": [{ "type": "text", "text": "引用内容" }]
-        }
-      ]
+      "content": [{ "type": "text", "text": "引用内容" }]
     },
     {
       "type": "image",

@@ -88,11 +88,28 @@ function convertQuote(
 ): MASTBlockId {
   const id = newId();
   const children: MASTBlockId[] = [];
+  let currentRuns: MASTTextRun[] = [];
 
-  for (const child of block.content) {
-    const childId = convertParagraph(child, blocks);
-    children.push(childId);
+  const flush = () => {
+    const paraId = newId();
+    blocks[paraId] = { id: paraId, type: 'paragraph', content: currentRuns };
+    children.push(paraId);
+    currentRuns = [];
+  };
+
+  // NoteAtomQuote.content 为行内 text 数组（墨问 quote 直接持有 text）。
+  // 按 \n 拆成多段 paragraph 作为 MASTQuoteBlock.children，保持与 from-mast 的 round-trip。
+  for (const textNode of block.content ?? []) {
+    const run = convertTextRun(textNode);
+    const parts = run.text.split('\n');
+    for (let i = 0; i < parts.length; i++) {
+      if (i > 0) flush();
+      if (parts[i] !== '') {
+        currentRuns.push({ ...run, text: parts[i] });
+      }
+    }
   }
+  flush();
 
   const mast: MASTQuoteBlock = { id, type: 'quote', children };
   blocks[id] = mast;

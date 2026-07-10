@@ -24,7 +24,9 @@ export interface NoteAtomParagraph {
 
 export interface NoteAtomQuote {
   type: 'quote';
-  content: NoteAtomParagraph[];
+  // 墨问 quote 节点直接持有行内文本（text 节点数组），不含 paragraph。
+  // 多段引用用 { type: 'text', text: '\n' } 分隔。见 docs/architecture/api/noteatom.md
+  content: NoteAtomTextNode[];
 }
 
 export interface NoteAtomImage {
