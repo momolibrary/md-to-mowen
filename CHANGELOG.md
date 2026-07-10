@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/momolibrary/md-to-mowen/compare/v1.9.2...v1.10.0) (2026-07-10)
+
+
+### Features
+
+* 新增 whoami 命令验证登录状态 ([f20420d](https://github.com/momolibrary/md-to-mowen/commit/f20420df1b2024c45abcfe23d14817e93e11b9e4))
+
 ## [1.9.2](https://github.com/momolibrary/md-to-mowen/compare/v1.9.1...v1.9.2) (2026-07-10)
 
 
