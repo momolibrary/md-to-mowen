@@ -70,14 +70,17 @@ function convertParagraph(block: MASTParagraphBlock): NoteAtomParagraph {
 }
 
 function convertQuote(block: MASTQuoteBlock, doc: MASTDocument): NoteAtomBlockNode {
-  const children: NoteAtomParagraph[] = [];
+  // 墨问 quote 节点的 content 是行内文本数组（不含 paragraph）。
+  // 收集所有子段落（含嵌套 quote 展平项），把 text runs 合并为单个 text 数组，
+  // 多段之间用 { type: 'text', text: '\n' } 分隔（与 <br> 的既有约定一致）。
+  const paragraphs: MASTParagraphBlock[] = [];
 
   for (const childId of block.children) {
     const child = doc.blocks[childId];
     if (!child) continue;
 
     if (child.type === 'paragraph') {
-      children.push(convertParagraph(child as MASTParagraphBlock));
+      paragraphs.push(child as MASTParagraphBlock);
     }
     // quote 内嵌套 quote：展平为段落
     else if (child.type === 'quote') {
@@ -85,18 +88,26 @@ function convertQuote(block: MASTQuoteBlock, doc: MASTDocument): NoteAtomBlockNo
       for (const grandChildId of quoteChild.children) {
         const grandChild = doc.blocks[grandChildId];
         if (grandChild && grandChild.type === 'paragraph') {
-          children.push(convertParagraph(grandChild as MASTParagraphBlock));
+          paragraphs.push(grandChild as MASTParagraphBlock);
         }
       }
     }
   }
 
-  return { type: 'quote', content: children };
+  const content: NoteAtomTextNode[] = [];
+  paragraphs.forEach((p, i) => {
+    if (i > 0) content.push({ type: 'text', text: '\n' });
+    content.push(...p.content.map(convertTextRun));
+  });
+
+  return { type: 'quote', content };
 }
 
 function convertImage(block: MASTImageBlock): NoteAtomImage {
   if (!block.uuid) {
-    throw new Error(`MASTImageBlock ${block.id} has no uuid — run asset processing before serialization`);
+    throw new Error(
+      `MASTImageBlock ${block.id} has no uuid — run asset processing before serialization`
+    );
   }
   return {
     type: 'image',
@@ -110,7 +121,9 @@ function convertImage(block: MASTImageBlock): NoteAtomImage {
 
 function convertAudio(block: MASTAudioBlock): NoteAtomAudio {
   if (!block.uuid) {
-    throw new Error(`MASTAudioBlock ${block.id} has no uuid — run asset processing before serialization`);
+    throw new Error(
+      `MASTAudioBlock ${block.id} has no uuid — run asset processing before serialization`
+    );
   }
   return {
     type: 'audio',
@@ -142,7 +155,9 @@ function convertNote(block: MASTNoteBlock): NoteAtomNote {
 
 function convertPdf(block: MASTPdfBlock): NoteAtomPdf {
   if (!block.uuid) {
-    throw new Error(`MASTPdfBlock ${block.id} has no uuid — run asset processing before serialization`);
+    throw new Error(
+      `MASTPdfBlock ${block.id} has no uuid — run asset processing before serialization`
+    );
   }
   return {
     type: 'pdf',
@@ -154,7 +169,11 @@ function convertPdf(block: MASTPdfBlock): NoteAtomPdf {
 
 // ── 行内节点转换 ───────────────────────────────────────────────────────────────
 
-function convertTextRun(run: { type: 'text'; text: string; marks?: MASTInlineMarks }): NoteAtomTextNode {
+function convertTextRun(run: {
+  type: 'text';
+  text: string;
+  marks?: MASTInlineMarks;
+}): NoteAtomTextNode {
   const node: NoteAtomTextNode = { type: 'text', text: run.text };
 
   if (!run.marks) return node;
