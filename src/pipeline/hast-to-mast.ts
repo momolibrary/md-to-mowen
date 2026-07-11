@@ -135,28 +135,31 @@ function extractInline(
     if (!isElement(node)) continue;
 
     const tag = node.tagName;
-    const childMarks = { ...marks };
+    let childMarks = { ...marks };
 
     switch (tag) {
       case 'strong':
-        childMarks.bold = true;
+        // 行内 code 独占，不再叠加 bold 等装饰性 marks
+        if (!childMarks.code) childMarks.bold = true;
         break;
       case 'em':
-        childMarks.italic = true;
+        if (!childMarks.code) childMarks.italic = true;
         break;
       case 'code':
-        childMarks.code = true;
+        // 墨问 ProseMirror schema：code 与 bold/italic/strikethrough/link 等互斥
+        // 进入 code 时丢弃已继承的其它 marks，只保留 code
+        childMarks = { code: true };
         break;
       case 'del':
-        childMarks.strikethrough = true;
+        if (!childMarks.code) childMarks.strikethrough = true;
         break;
       case 'mark':
-        childMarks.highlight = true;
+        if (!childMarks.code) childMarks.highlight = true;
         break;
       case 'a': {
         const href = (node.properties?.href as string) ?? '';
-        // 忽略纯锚点链接（fragment links）
-        if (href && !href.startsWith('#')) {
+        // 忽略纯锚点链接（fragment links）；code 独占时也不再叠加 link
+        if (href && !href.startsWith('#') && !childMarks.code) {
           childMarks.link = href;
         }
         break;

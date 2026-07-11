@@ -125,6 +125,44 @@ describe('行内标记', () => {
     expect(p.content[1].marks?.bold).toBe(true);
     expect(p.content[2].text).toBe(' 后');
   });
+
+  it('粗体包裹行内 code → 仅保留 code（不叠加 bold）', () => {
+    const doc = parse('**`bold code`**');
+    const p = topBlocks(doc)[0] as MASTParagraphBlock;
+    expect(p.content).toHaveLength(1);
+    expect(p.content[0].text).toBe('bold code');
+    expect(p.content[0].marks).toEqual({ code: true });
+  });
+
+  it('粗体段落内嵌 code → code 段无 bold', () => {
+    const doc = parse('**bold `code` text**');
+    const p = topBlocks(doc)[0] as MASTParagraphBlock;
+    expect(p.content).toHaveLength(3);
+    expect(p.content[0].marks).toEqual({ bold: true });
+    expect(p.content[1].text).toBe('code');
+    expect(p.content[1].marks).toEqual({ code: true });
+    expect(p.content[2].marks).toEqual({ bold: true });
+  });
+
+  it('标题内行内 code → code 段无 bold', () => {
+    const doc = parse('# Title with `code`');
+    const p = topBlocks(doc)[0] as MASTParagraphBlock;
+    expect(p.content).toHaveLength(2);
+    expect(p.content[0].marks?.bold).toBe(true);
+    expect(p.content[1].text).toBe('code');
+    expect(p.content[1].marks).toEqual({ code: true });
+    expect(p.content[1].marks?.bold).toBeUndefined();
+  });
+
+  it('删除线/链接包裹 code → 仅保留 code', () => {
+    const strikeDoc = parse('~~`strike code`~~');
+    const strikeP = topBlocks(strikeDoc)[0] as MASTParagraphBlock;
+    expect(strikeP.content[0].marks).toEqual({ code: true });
+
+    const linkDoc = parse('[`link code`](https://x.com)');
+    const linkP = topBlocks(linkDoc)[0] as MASTParagraphBlock;
+    expect(linkP.content[0].marks).toEqual({ code: true });
+  });
 });
 
 // ── 段落 ───────────────────────────────────────────────────────────────────────

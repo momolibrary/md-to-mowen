@@ -84,7 +84,7 @@ interface NoteAtomTextNode {
 
 ## 行内标记（Marks）
 
-标记描述文本的格式，可叠加使用：
+标记描述文本的格式。**装饰性 marks（bold / italic / strikethrough / highlight / link）可叠加**；`code` **独占**，不可与其它 marks 共存。
 
 ```typescript
 type NoteAtomMark =
@@ -95,13 +95,18 @@ type NoteAtomMark =
   | { type: 'link'; attrs: { href: string } };
 ```
 
-| 标记            | 说明                      |
-| --------------- | ------------------------- |
-| `bold`          | 粗体                      |
-| `italic`        | 斜体                      |
-| `code`          | 行内代码                  |
-| `strikethrough` | 删除线                    |
-| `link`          | 超链接，需要 `attrs.href` |
+| 标记            | 说明                          |
+| --------------- | ----------------------------- |
+| `bold`          | 粗体                          |
+| `italic`        | 斜体                          |
+| `code`          | 行内代码（与其它 marks 互斥） |
+| `strikethrough` | 删除线                        |
+| `link`          | 超链接，需要 `attrs.href`     |
+
+> ⚠️ 墨问编辑器基于 ProseMirror。若同一 `text` 节点同时带 `bold` 与 `code`，加载时会报
+> `Invalid collection of marks for node text: bold,code`（「编辑器内容含有不支持的格式」）。
+> 转换层在遇到行内 code 时只保留 `{ type: 'code' }`，丢弃继承的 bold 等 marks
+> （典型场景：`` # 标题 `code` ``、``**`code`**``）。
 
 ---
 
