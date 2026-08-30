@@ -181,6 +181,26 @@ describe('行内标记', () => {
     const linkP = topBlocks(linkDoc)[0] as MASTParagraphBlock;
     expect(linkP.content[0].marks).toEqual({ code: true });
   });
+
+  it('高亮包裹行内 code → 仅保留 code（不叠加 highlight）', () => {
+    const doc = parse('==`code`==');
+    const p = topBlocks(doc)[0] as MASTParagraphBlock;
+    expect(p.content).toHaveLength(1);
+    expect(p.content[0].text).toBe('code');
+    expect(p.content[0].marks).toEqual({ code: true });
+  });
+
+  it('高亮段落内嵌 code → 两侧仍 highlight，code 段无 highlight', () => {
+    const doc = parse('==hello `code` world==');
+    const p = topBlocks(doc)[0] as MASTParagraphBlock;
+    expect(p.content).toHaveLength(3);
+    expect(p.content[0].text).toBe('hello ');
+    expect(p.content[0].marks).toEqual({ highlight: true });
+    expect(p.content[1].text).toBe('code');
+    expect(p.content[1].marks).toEqual({ code: true });
+    expect(p.content[2].text).toBe(' world');
+    expect(p.content[2].marks).toEqual({ highlight: true });
+  });
 });
 
 // ── 段落 ───────────────────────────────────────────────────────────────────────

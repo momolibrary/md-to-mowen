@@ -39,6 +39,15 @@ describe('highlight: Markdown → MAST', () => {
     const block = doc.topLevel.map((id) => doc.blocks[id])[0] as { content: MASTTextRun[] };
     expect(block.content.every((r) => !r.marks?.highlight)).toBe(true);
   });
+
+  it('高亮包裹 code → MAST 仅保留 code', () => {
+    const hast = mdToHast('==`code`==');
+    const { doc } = hastToMast(hast);
+    const block = doc.topLevel.map((id) => doc.blocks[id])[0] as { content: MASTTextRun[] };
+    expect(block.content).toHaveLength(1);
+    expect(block.content[0].text).toBe('code');
+    expect(block.content[0].marks).toEqual({ code: true });
+  });
 });
 
 // ── MAST → NoteAtom ──────────────────────────────────────────────────────────
