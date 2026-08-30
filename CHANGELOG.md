@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/momolibrary/md-to-mowen/compare/v1.10.1...v1.11.0) (2026-08-30)
+
+
+### Features
+
+* 将 H1-H3 转为原生 heading 节点 ([#42](https://github.com/momolibrary/md-to-mowen/issues/42)) ([e748ca3](https://github.com/momolibrary/md-to-mowen/commit/e748ca32cb30a137bff5a9bb119b9a888afe639a))
+
 ## [1.10.1](https://github.com/momolibrary/md-to-mowen/compare/v1.10.0...v1.10.1) (2026-08-30)
 
 
