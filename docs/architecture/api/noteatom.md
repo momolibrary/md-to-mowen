@@ -128,6 +128,8 @@ type NoteAtomMark =
 
 ## 关键约束
 
+官方 NoteAtom 模型见 [NoteAtom](https://mowen.apifox.cn/167993166d0)，结构说明见 [2. NoteAtom 的结构说明](https://mowen.apifox.cn/6682171m0)。`heading` 是 block。`attrs.level` 可选值是字符串 `1`、`2`、`3`。页面上的 JSON 举例尚未包含 heading 节点。
+
 墨问不支持以下原生格式，需在转换时处理：
 
 | 原生格式         | 处理方式                                                    |
