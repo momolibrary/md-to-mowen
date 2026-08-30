@@ -57,6 +57,7 @@ describe('dry-run 模式', () => {
     expect(result.dryRun).toBe(true);
     expect(result.noteId).toBeUndefined();
     expect(result.noteUrl).toBeUndefined();
+    expect(result.stats.headings).toBe(1);
     expect(client.createNote).not.toHaveBeenCalled();
     expect(client.editNote).not.toHaveBeenCalled();
   });

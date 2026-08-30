@@ -3,6 +3,7 @@ import type {
   MASTBlockId,
   MASTBlockNode,
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTImageBlock,
   MASTAudioBlock,
@@ -16,6 +17,8 @@ import type {
   NoteAtomDoc,
   NoteAtomBlockNode,
   NoteAtomParagraph,
+  NoteAtomHeading,
+  NoteAtomHeadingLevel,
   NoteAtomQuote,
   NoteAtomImage,
   NoteAtomAudio,
@@ -56,6 +59,8 @@ function convertNode(
   switch (node.type) {
     case 'paragraph':
       return convertParagraph(node, blocks);
+    case 'heading':
+      return convertHeading(node, blocks);
     case 'quote':
       return convertQuote(node, blocks);
     case 'image':
@@ -78,6 +83,35 @@ function convertParagraph(
   const id = newId();
   const content: MASTTextRun[] = (block.content ?? []).map(convertTextRun);
   const mast: MASTParagraphBlock = { id, type: 'paragraph', content };
+  blocks[id] = mast;
+  return id;
+}
+
+function parseHeadingLevel(value: unknown): NoteAtomHeadingLevel | undefined {
+  const s = String(value);
+  if (s === '1' || s === '2' || s === '3') return s;
+  return undefined;
+}
+
+function convertHeading(
+  block: NoteAtomHeading,
+  blocks: Record<MASTBlockId, MASTBlockNode>
+): MASTBlockId {
+  const id = newId();
+  const content: MASTTextRun[] = (block.content ?? []).map(convertTextRun);
+  const level = parseHeadingLevel(block.attrs.level);
+  if (level) {
+    const mast: MASTHeadingBlock = { id, type: 'heading', level, content };
+    blocks[id] = mast;
+    return id;
+  }
+  const mast: MASTParagraphBlock = {
+    id,
+    type: 'paragraph',
+    content: content.map((run) =>
+      run.marks?.code ? run : { ...run, marks: { ...run.marks, bold: true } }
+    ),
+  };
   blocks[id] = mast;
   return id;
 }

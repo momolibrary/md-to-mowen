@@ -10,6 +10,7 @@ export interface NoteAtomDoc {
 
 export type NoteAtomBlockNode =
   | NoteAtomParagraph
+  | NoteAtomHeading
   | NoteAtomQuote
   | NoteAtomImage
   | NoteAtomAudio
@@ -19,6 +20,15 @@ export type NoteAtomBlockNode =
 
 export interface NoteAtomParagraph {
   type: 'paragraph';
+  content: NoteAtomTextNode[];
+}
+
+// 墨问 attrs 是字符串 map，level 必须是 '1'|'2'|'3' 而非 number
+export type NoteAtomHeadingLevel = '1' | '2' | '3';
+
+export interface NoteAtomHeading {
+  type: 'heading';
+  attrs: { level: NoteAtomHeadingLevel };
   content: NoteAtomTextNode[];
 }
 

@@ -35,6 +35,7 @@ export interface PublishResult {
 
 export interface PipelineStats {
   paragraphs: number;
+  headings: number;
   quotes: number;
   images: number;
   tables: number;
@@ -109,6 +110,7 @@ export async function processFile(
 
 function collectStats(mast: MASTDocument, dryRun: boolean): PipelineStats {
   let paragraphs = 0;
+  let headings = 0;
   let quotes = 0;
   let images = 0;
   let tables = 0;
@@ -116,24 +118,45 @@ function collectStats(mast: MASTDocument, dryRun: boolean): PipelineStats {
   let codeblocks = 0;
 
   for (const block of Object.values(mast.blocks)) {
-    if (block.type === 'paragraph') paragraphs++;
-    else if (block.type === 'quote') quotes++;
-    else if (block.type === 'image') {
-      if (block.isTable) tables++;
-      else images++;
-    } else if (block.type === 'audio') audios++;
-    else if (block.type === 'codeblock') codeblocks++;
-    // note 块不计入统计（无需上传资源）
+    switch (block.type) {
+      case 'paragraph':
+        paragraphs++;
+        break;
+      case 'heading':
+        headings++;
+        break;
+      case 'quote':
+        quotes++;
+        break;
+      case 'image':
+        if (block.isTable) tables++;
+        else images++;
+        break;
+      case 'audio':
+        audios++;
+        break;
+      case 'codeblock':
+        codeblocks++;
+        break;
+      case 'note':
+      case 'pdf':
+        break;
+      default: {
+        const _exhaustive: never = block;
+        void _exhaustive;
+      }
+    }
   }
 
   return {
     paragraphs,
+    headings,
     quotes,
     images,
     tables,
     audios,
     codeblocks,
-    totalBlocks: paragraphs + quotes + images + tables + audios + codeblocks,
+    totalBlocks: paragraphs + headings + quotes + images + tables + audios + codeblocks,
     uploadedAssets: dryRun ? 0 : images + tables + audios,
   };
 }
@@ -150,6 +173,7 @@ function printDryRunReport(
   console.log(`文件：${filePath}`);
   console.log(`\n流水线统计：`);
   console.log(`  段落块：    ${stats.paragraphs}`);
+  console.log(`  标题块：    ${stats.headings}`);
   console.log(`  引用块：    ${stats.quotes}`);
   console.log(`  图片块：    ${stats.images}`);
   console.log(`  表格块：    ${stats.tables}`);

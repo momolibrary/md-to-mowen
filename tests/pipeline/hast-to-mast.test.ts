@@ -8,6 +8,7 @@ import {
 import type {
   MASTDocument,
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTImageBlock,
   MASTAudioBlock,
@@ -36,35 +37,51 @@ beforeEach(() => {
 // ── 标题 ───────────────────────────────────────────────────────────────────────
 
 describe('标题映射', () => {
-  it('H1 → bold paragraph', () => {
+  it('H1 → heading level "1"', () => {
     const doc = parse('# 一级标题');
     const blocks = topBlocks(doc);
     expect(blocks).toHaveLength(1);
-    const p = blocks[0] as MASTParagraphBlock;
-    expect(p.type).toBe('paragraph');
-    expect(p.content[0].marks?.bold).toBe(true);
-    expect(p.content[0].text).toBe('一级标题');
+    const h = blocks[0] as MASTHeadingBlock;
+    expect(h.type).toBe('heading');
+    expect(h.level).toBe('1');
+    expect(h.content[0].text).toBe('一级标题');
+    expect(h.content[0].marks?.bold).toBeUndefined();
   });
 
-  it('H2 → bold paragraph', () => {
+  it('H2 → heading level "2"', () => {
     const doc = parse('## 二级标题');
-    const p = topBlocks(doc)[0] as MASTParagraphBlock;
-    expect(p.content[0].marks?.bold).toBe(true);
+    const h = topBlocks(doc)[0] as MASTHeadingBlock;
+    expect(h.type).toBe('heading');
+    expect(h.level).toBe('2');
+    expect(h.content[0].marks?.bold).toBeUndefined();
   });
 
-  it('H3 → bold paragraph', () => {
+  it('H3 → heading level "3"', () => {
     const doc = parse('### 三级标题');
-    const p = topBlocks(doc)[0] as MASTParagraphBlock;
-    expect(p.content[0].marks?.bold).toBe(true);
-    expect(p.content[0].text).toBe('三级标题');
+    const h = topBlocks(doc)[0] as MASTHeadingBlock;
+    expect(h.type).toBe('heading');
+    expect(h.level).toBe('3');
+    expect(h.content[0].text).toBe('三级标题');
+    expect(h.content[0].marks?.bold).toBeUndefined();
   });
 
   it('H4/H5/H6 → bold paragraph', () => {
     for (const md of ['#### H4', '##### H5', '###### H6']) {
       const doc = parse(md);
       const p = topBlocks(doc)[0] as MASTParagraphBlock;
+      expect(p.type).toBe('paragraph');
       expect(p.content[0].marks?.bold).toBe(true);
     }
+  });
+
+  it('引用内 heading → 同内容段落（quote 不能承载 heading）', () => {
+    const doc = parse('> # 标题');
+    const q = topBlocks(doc)[0] as MASTQuoteBlock;
+    expect(q.type).toBe('quote');
+    const inner = doc.blocks[q.children[0]] as MASTParagraphBlock;
+    expect(inner.type).toBe('paragraph');
+    expect(inner.content[0].text).toBe('标题');
+    expect(inner.content[0].marks?.bold).toBeUndefined();
   });
 });
 
@@ -146,12 +163,13 @@ describe('行内标记', () => {
 
   it('标题内行内 code → code 段无 bold', () => {
     const doc = parse('# Title with `code`');
-    const p = topBlocks(doc)[0] as MASTParagraphBlock;
-    expect(p.content).toHaveLength(2);
-    expect(p.content[0].marks?.bold).toBe(true);
-    expect(p.content[1].text).toBe('code');
-    expect(p.content[1].marks).toEqual({ code: true });
-    expect(p.content[1].marks?.bold).toBeUndefined();
+    const h = topBlocks(doc)[0] as MASTHeadingBlock;
+    expect(h.type).toBe('heading');
+    expect(h.content).toHaveLength(2);
+    expect(h.content[0].text).toBe('Title with ');
+    expect(h.content[0].marks?.bold).toBeUndefined();
+    expect(h.content[1].text).toBe('code');
+    expect(h.content[1].marks).toEqual({ code: true });
   });
 
   it('删除线/链接包裹 code → 仅保留 code', () => {
@@ -411,8 +429,8 @@ console.log('hello');
     const doc = parse(md);
     const blocks = topBlocks(doc);
 
-    // H1 → bold paragraph
-    expect((blocks[0] as MASTParagraphBlock).content[0].marks?.bold).toBe(true);
+    expect(blocks[0].type).toBe('heading');
+    expect((blocks[0] as MASTHeadingBlock).level).toBe('1');
 
     // 空行 → 空段落
     expect((blocks[1] as MASTParagraphBlock).content).toHaveLength(0);
@@ -477,7 +495,7 @@ describe('空行处理', () => {
     const doc = parse('# 标题\n\n正文');
     const blocks = topBlocks(doc);
     expect(blocks).toHaveLength(3);
-    expect((blocks[0] as MASTParagraphBlock).content[0].marks?.bold).toBe(true);
+    expect(blocks[0].type).toBe('heading');
     expect((blocks[1] as MASTParagraphBlock).content).toHaveLength(0);
     expect((blocks[2] as MASTParagraphBlock).content[0].text).toBe('正文');
   });
@@ -546,25 +564,25 @@ describe('高亮支持', () => {
 // ── 有损转换警告 ──────────────────────────────────────────────────────────────
 
 describe('有损转换警告', () => {
-  it('H1 标题产生 heading 警告', () => {
-    const warnings = getWarnings('# 标题');
-    expect(warnings.some((w) => w.type === 'heading' && w.message.includes('H1'))).toBe(true);
+  it('H1–H3 不产生 heading 警告', () => {
+    expect(getWarnings('# 标题').filter((w) => w.type === 'heading')).toHaveLength(0);
+    expect(getWarnings('# H1\n## H2\n### H3').filter((w) => w.type === 'heading')).toHaveLength(0);
   });
 
-  it('H2-H6 标题均产生 heading 警告', () => {
-    for (let level = 2; level <= 6; level++) {
+  it('H4 仍产生 heading 警告', () => {
+    const warnings = getWarnings('#### 四级');
+    expect(warnings.some((w) => w.type === 'heading' && w.message.includes('H4'))).toBe(true);
+    expect(warnings.some((w) => w.message.includes('墨问仅支持 H1–H3'))).toBe(true);
+  });
+
+  it('H4-H6 标题均产生 heading 警告', () => {
+    for (let level = 4; level <= 6; level++) {
       const md = '#'.repeat(level) + ' 标题';
       const warnings = getWarnings(md);
       expect(warnings.some((w) => w.type === 'heading' && w.message.includes(`H${level}`))).toBe(
         true
       );
     }
-  });
-
-  it('多个标题产生多条 heading 警告', () => {
-    const warnings = getWarnings('# H1\n## H2\n### H3');
-    const headingWarnings = warnings.filter((w) => w.type === 'heading');
-    expect(headingWarnings).toHaveLength(3);
   });
 
   it('普通段落不产生警告', () => {
