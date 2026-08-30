@@ -2,6 +2,7 @@ import type {
   MASTDocument,
   MASTBlockNode,
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTImageBlock,
   MASTAudioBlock,
@@ -46,6 +47,8 @@ function serializeBlock(block: MASTBlockNode, doc: MASTDocument): string {
   switch (block.type) {
     case 'paragraph':
       return serializeParagraph(block);
+    case 'heading':
+      return serializeHeading(block);
     case 'quote':
       return serializeQuote(block, doc);
     case 'image':
@@ -64,6 +67,22 @@ function serializeBlock(block: MASTBlockNode, doc: MASTDocument): string {
 function serializeParagraph(block: MASTParagraphBlock): string {
   if (block.content.length === 0) return '';
   return block.content.map(serializeTextRun).join('');
+}
+
+function serializeHeading(block: MASTHeadingBlock): string {
+  const hashes = headingHashes(block.level);
+  return `${hashes} ${block.content.map(serializeTextRun).join('')}`;
+}
+
+function headingHashes(level: MASTHeadingBlock['level']): string {
+  switch (level) {
+    case '1':
+      return '#';
+    case '2':
+      return '##';
+    case '3':
+      return '###';
+  }
 }
 
 function serializeQuote(block: MASTQuoteBlock, doc: MASTDocument): string {

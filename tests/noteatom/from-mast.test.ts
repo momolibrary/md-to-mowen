@@ -3,6 +3,7 @@ import { mastToNoteAtom } from '../../src/noteatom/from-mast.js';
 import type { MASTDocument } from '../../src/mast/types.js';
 import type {
   NoteAtomParagraph,
+  NoteAtomHeading,
   NoteAtomQuote,
   NoteAtomImage,
   NoteAtomAudio,
@@ -265,6 +266,67 @@ describe('音频序列化', () => {
     const na = mastToNoteAtom(doc);
     const audio = na.content[0] as NoteAtomAudio;
     expect(audio.attrs['show-note']).toBe('');
+  });
+});
+
+describe('标题序列化', () => {
+  it('heading level "1" → NoteAtomHeading', () => {
+    const doc = makeDoc(
+      {
+        b_1: {
+          id: 'b_1',
+          type: 'heading',
+          level: '1',
+          content: [{ type: 'text', text: 'H1 标题' }],
+        },
+      },
+      ['b_1']
+    );
+    const na = mastToNoteAtom(doc);
+    const h = na.content[0] as NoteAtomHeading;
+    expect(h.type).toBe('heading');
+    expect(h.attrs.level).toBe('1');
+    expect(h.content[0].text).toBe('H1 标题');
+    expect(h.content[0].marks).toBeUndefined();
+  });
+
+  it('heading level "2" / "3" 1:1 映射', () => {
+    for (const level of ['2', '3'] as const) {
+      const doc = makeDoc(
+        {
+          b_1: {
+            id: 'b_1',
+            type: 'heading',
+            level,
+            content: [{ type: 'text', text: `H${level}` }],
+          },
+        },
+        ['b_1']
+      );
+      const h = mastToNoteAtom(doc).content[0] as NoteAtomHeading;
+      expect(h.type).toBe('heading');
+      expect(h.attrs.level).toBe(level);
+    }
+  });
+
+  it('heading 内行内 code 仍独占', () => {
+    const doc = makeDoc(
+      {
+        b_1: {
+          id: 'b_1',
+          type: 'heading',
+          level: '1',
+          content: [
+            { type: 'text', text: '标题 ' },
+            { type: 'text', text: 'code', marks: { code: true, bold: true } },
+          ],
+        },
+      },
+      ['b_1']
+    );
+    const h = mastToNoteAtom(doc).content[0] as NoteAtomHeading;
+    expect(h.content[0].marks).toBeUndefined();
+    expect(h.content[1].marks).toEqual([{ type: 'code' }]);
   });
 });
 

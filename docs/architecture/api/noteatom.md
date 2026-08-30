@@ -128,17 +128,19 @@ type NoteAtomMark =
 
 ## 关键约束
 
+官方 NoteAtom 模型见 [NoteAtom](https://mowen.apifox.cn/167993166d0)，结构说明见 [2. NoteAtom 的结构说明](https://mowen.apifox.cn/6682171m0)。`heading` 是 block。`attrs.level` 可选值是字符串 `1`、`2`、`3`。页面上的 JSON 举例尚未包含 heading 节点。
+
 墨问不支持以下原生格式，需在转换时处理：
 
-| 原生格式      | 处理方式                                  |
-| ------------- | ----------------------------------------- |
-| 标题（H1/H2） | `paragraph` + `bold` 标记（层级信息丢失） |
-| 标题（H3+）   | 普通 `paragraph`（无粗体）                |
-| 有序/无序列表 | `paragraph` + 文本前缀（`• ` 或 `1. `）   |
-| 代码块        | 每行一个 `paragraph`，文本带 `code` 标记  |
-| 表格          | 渲染为图片后作为 `image` 节点插入         |
-| 分隔线 `---`  | 空 `paragraph`                            |
-| 空行          | 空 `paragraph`                            |
+| 原生格式         | 处理方式                                                    |
+| ---------------- | ----------------------------------------------------------- |
+| 标题（H1/H2/H3） | 原生 `heading` 节点，`attrs.level` 为 `"1"` / `"2"` / `"3"` |
+| 标题（H4+）      | `paragraph` + `bold` 标记（墨问仅支持 H1–H3）               |
+| 有序/无序列表    | `paragraph` + 文本前缀（`• ` 或 `1. `）                     |
+| 代码块           | 每行一个 `paragraph`，文本带 `code` 标记                    |
+| 表格             | 渲染为图片后作为 `image` 节点插入                           |
+| 分隔线 `---`     | 空 `paragraph`                                              |
+| 空行             | 空 `paragraph`                                              |
 
 ---
 
