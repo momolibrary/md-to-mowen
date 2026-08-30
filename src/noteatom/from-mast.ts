@@ -178,10 +178,16 @@ function convertTextRun(run: {
 
   if (!run.marks) return node;
 
+  // 墨问编辑器（ProseMirror）中 code 与其它 marks 互斥。
+  // 叠加 bold/code 等会报：Invalid collection of marks for node text: bold,code
+  if (run.marks.code) {
+    node.marks = [{ type: 'code' }];
+    return node;
+  }
+
   const marks: NoteAtomMark[] = [];
 
-  // 按优先级顺序：code → strikethrough → bold → italic → highlight → link
-  if (run.marks.code) marks.push({ type: 'code' });
+  // 按优先级顺序：strikethrough → bold → italic → highlight → link
   if (run.marks.strikethrough) marks.push({ type: 'strikethrough' });
   if (run.marks.bold) marks.push({ type: 'bold' });
   if (run.marks.italic) marks.push({ type: 'italic' });

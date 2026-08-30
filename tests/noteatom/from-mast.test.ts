@@ -96,7 +96,22 @@ describe('行内标记序列化', () => {
     expect(types).toContain('italic');
   });
 
-  it('标记顺序：code → strikethrough → bold → italic → highlight → link', () => {
+  it('标记顺序：strikethrough → bold → italic → highlight → link', () => {
+    const na = mastToNoteAtom(
+      paraWithMarks({
+        bold: true,
+        italic: true,
+        strikethrough: true,
+        highlight: true,
+        link: 'https://x.com',
+      })
+    );
+    const p = na.content[0] as NoteAtomParagraph;
+    const types = p.content[0].marks!.map((m) => m.type);
+    expect(types).toEqual(['strikethrough', 'bold', 'italic', 'highlight', 'link']);
+  });
+
+  it('code 与其它 marks 互斥：仅保留 code', () => {
     const na = mastToNoteAtom(
       paraWithMarks({
         bold: true,
@@ -108,8 +123,13 @@ describe('行内标记序列化', () => {
       })
     );
     const p = na.content[0] as NoteAtomParagraph;
-    const types = p.content[0].marks!.map((m) => m.type);
-    expect(types).toEqual(['code', 'strikethrough', 'bold', 'italic', 'highlight', 'link']);
+    expect(p.content[0].marks).toEqual([{ type: 'code' }]);
+  });
+
+  it('code + bold 仅输出 code', () => {
+    const na = mastToNoteAtom(paraWithMarks({ bold: true, code: true }));
+    const p = na.content[0] as NoteAtomParagraph;
+    expect(p.content[0].marks).toEqual([{ type: 'code' }]);
   });
 });
 
