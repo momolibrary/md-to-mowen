@@ -61,6 +61,11 @@ function isText(node: Node): node is Text {
 
 // ── 行内节点提取 ───────────────────────────────────────────────────────────────
 
+function withHighlight(marks: MASTInlineMarks, hlActive: boolean): MASTInlineMarks {
+  if (hlActive && !marks.code) return { ...marks, highlight: true };
+  return { ...marks };
+}
+
 /**
  * 处理含高亮标记（⸻）的文本节点。
  * 将文本按 marker 分割，根据当前高亮状态决定哪些段落加 highlight mark。
@@ -89,7 +94,7 @@ function processTextWithHighlight(
     const part = parts[i];
     if (!part) continue; // 跳过空段（marker 相邻或位于首尾）
     const run: MASTTextRun = { type: 'text', text: part };
-    const merged = { ...marks, ...(hlActive ? { highlight: true } : {}) };
+    const merged = withHighlight(marks, hlActive);
     if (Object.keys(merged).length > 0) {
       run.marks = merged;
     }
@@ -123,7 +128,7 @@ function extractInline(
           hlActive = result.lastHighlighted;
         } else {
           const run: MASTTextRun = { type: 'text', text: node.value };
-          const activeMarks = hlActive ? { ...marks, highlight: true } : { ...marks };
+          const activeMarks = withHighlight(marks, hlActive);
           if (Object.keys(activeMarks).length > 0) {
             run.marks = activeMarks;
           }
@@ -175,10 +180,10 @@ function extractInline(
 
     const childRuns = extractInline(node.children ?? [], childMarks, hlActive);
     runs.push(...childRuns);
-    // 更新 hlActive：如果子节点处理后仍处于高亮状态，继承下去
     const lastRun = childRuns[childRuns.length - 1];
     if (lastRun) {
-      hlActive = !!lastRun.marks?.highlight;
+      // code 不带 highlight，wrap 级 hlActive 不能从 code run 推断
+      hlActive = lastRun.marks?.code ? hlActive : !!lastRun.marks?.highlight;
     }
   }
 
