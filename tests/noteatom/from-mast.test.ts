@@ -132,6 +132,12 @@ describe('行内标记序列化', () => {
     const p = na.content[0] as NoteAtomParagraph;
     expect(p.content[0].marks).toEqual([{ type: 'code' }]);
   });
+
+  it('code + highlight 仅输出 code', () => {
+    const na = mastToNoteAtom(paraWithMarks({ highlight: true, code: true }));
+    const p = na.content[0] as NoteAtomParagraph;
+    expect(p.content[0].marks).toEqual([{ type: 'code' }]);
+  });
 });
 
 describe('引用块序列化', () => {
