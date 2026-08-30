@@ -1,6 +1,8 @@
 // MAST — Mowen AST（中间表示）
 // HAST 与 NoteAtom 之间的标准中间格式
 
+import type { NoteAtomHeadingLevel } from '../noteatom/types.js';
+
 export type MASTBlockId = `b_${string}`;
 
 export interface MASTDocument {
@@ -10,6 +12,7 @@ export interface MASTDocument {
 
 export type MASTBlockNode =
   | MASTParagraphBlock
+  | MASTHeadingBlock
   | MASTQuoteBlock
   | MASTImageBlock
   | MASTAudioBlock
@@ -20,6 +23,13 @@ export type MASTBlockNode =
 export interface MASTParagraphBlock {
   id: MASTBlockId;
   type: 'paragraph';
+  content: MASTInlineNode[];
+}
+
+export interface MASTHeadingBlock {
+  id: MASTBlockId;
+  type: 'heading';
+  level: NoteAtomHeadingLevel;
   content: MASTInlineNode[];
 }
 

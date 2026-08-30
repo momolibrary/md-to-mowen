@@ -16,7 +16,9 @@ function makeDoc(blocks: MASTBlockNode[]): MASTDocument {
 
 describe('MAST → Markdown 段落', () => {
   it('纯文本', () => {
-    const md = mastToMarkdown(makeDoc([{ id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }]));
+    const md = mastToMarkdown(
+      makeDoc([{ id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: 'Hello' }] }])
+    );
     expect(md).toBe('Hello');
   });
 
@@ -28,7 +30,7 @@ describe('MAST → Markdown 段落', () => {
           type: 'paragraph',
           content: [{ type: 'text', text: 'bold', marks: { bold: true } }],
         },
-      ]),
+      ])
     );
     expect(md).toBe('**bold**');
   });
@@ -41,7 +43,7 @@ describe('MAST → Markdown 段落', () => {
           type: 'paragraph',
           content: [{ type: 'text', text: 'italic', marks: { italic: true } }],
         },
-      ]),
+      ])
     );
     expect(md).toBe('*italic*');
   });
@@ -54,7 +56,7 @@ describe('MAST → Markdown 段落', () => {
           type: 'paragraph',
           content: [{ type: 'text', text: 'code', marks: { code: true } }],
         },
-      ]),
+      ])
     );
     expect(md).toBe('`code`');
   });
@@ -67,7 +69,7 @@ describe('MAST → Markdown 段落', () => {
           type: 'paragraph',
           content: [{ type: 'text', text: 'strike', marks: { strikethrough: true } }],
         },
-      ]),
+      ])
     );
     expect(md).toBe('~~strike~~');
   });
@@ -80,7 +82,7 @@ describe('MAST → Markdown 段落', () => {
           type: 'paragraph',
           content: [{ type: 'text', text: 'click', marks: { link: 'https://example.com' } }],
         },
-      ]),
+      ])
     );
     expect(md).toBe('[click](https://example.com)');
   });
@@ -91,9 +93,11 @@ describe('MAST → Markdown 段落', () => {
         {
           id: 'b_1',
           type: 'paragraph',
-          content: [{ type: 'text', text: 'link bold', marks: { bold: true, link: 'https://x.com' } }],
+          content: [
+            { type: 'text', text: 'link bold', marks: { bold: true, link: 'https://x.com' } },
+          ],
         },
-      ]),
+      ])
     );
     expect(md).toBe('[**link bold**](https://x.com)');
   });
@@ -103,7 +107,7 @@ describe('MAST → Markdown 段落', () => {
       makeDoc([
         { id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: '第一段' }] },
         { id: 'b_2', type: 'paragraph', content: [{ type: 'text', text: '第二段' }] },
-      ]),
+      ])
     );
     expect(md).toBe('第一段\n\n第二段');
   });
@@ -115,7 +119,11 @@ describe('MAST → Markdown 引用块', () => {
   it('简单引用', () => {
     const doc = makeDoc([]);
     const quoteBlock: any = { id: 'b_1', type: 'quote', children: ['b_2'] };
-    const innerBlock: any = { id: 'b_2', type: 'paragraph', content: [{ type: 'text', text: '引用内容' }] };
+    const innerBlock: any = {
+      id: 'b_2',
+      type: 'paragraph',
+      content: [{ type: 'text', text: '引用内容' }],
+    };
     doc.blocks[quoteBlock.id] = quoteBlock;
     doc.blocks[innerBlock.id] = innerBlock;
     doc.topLevel.push(quoteBlock.id);
@@ -152,7 +160,7 @@ describe('MAST → Markdown 图片', () => {
           alt: 'photo',
           align: 'center',
         },
-      ]),
+      ])
     );
     expect(md).toBe('![photo](./photo.jpg)');
   });
@@ -170,9 +178,62 @@ describe('MAST → Markdown 音频', () => {
           src: './music.mp3',
           showNote: '00:00 开场',
         },
-      ]),
+      ])
     );
     expect(md).toBe('![audio: 00:00 开场](./music.mp3)');
+  });
+});
+
+describe('MAST → Markdown 标题', () => {
+  it('heading → ATX # / ## / ###', () => {
+    expect(
+      mastToMarkdown(
+        makeDoc([
+          { id: 'b_1', type: 'heading', level: '1', content: [{ type: 'text', text: '一级' }] },
+        ])
+      )
+    ).toBe('# 一级');
+    expect(
+      mastToMarkdown(
+        makeDoc([
+          { id: 'b_1', type: 'heading', level: '2', content: [{ type: 'text', text: '二级' }] },
+        ])
+      )
+    ).toBe('## 二级');
+    expect(
+      mastToMarkdown(
+        makeDoc([
+          { id: 'b_1', type: 'heading', level: '3', content: [{ type: 'text', text: '三级' }] },
+        ])
+      )
+    ).toBe('### 三级');
+  });
+
+  it('heading 不因标题本身包裹 **', () => {
+    const md = mastToMarkdown(
+      makeDoc([
+        { id: 'b_1', type: 'heading', level: '1', content: [{ type: 'text', text: '标题' }] },
+      ])
+    );
+    expect(md).toBe('# 标题');
+    expect(md).not.toContain('**');
+  });
+
+  it('heading 内行内 code 序列化为反引号', () => {
+    const md = mastToMarkdown(
+      makeDoc([
+        {
+          id: 'b_1',
+          type: 'heading',
+          level: '1',
+          content: [
+            { type: 'text', text: '标题 ' },
+            { type: 'text', text: 'code', marks: { code: true } },
+          ],
+        },
+      ])
+    );
+    expect(md).toBe('# 标题 `code`');
   });
 });
 
@@ -185,7 +246,7 @@ describe('MAST → Markdown 空段落', () => {
         { id: 'b_1', type: 'paragraph', content: [{ type: 'text', text: '上面' }] },
         { id: 'b_2', type: 'paragraph', content: [] },
         { id: 'b_3', type: 'paragraph', content: [{ type: 'text', text: '下面' }] },
-      ]),
+      ])
     );
     expect(md).toBe('上面\n\n下面');
   });
@@ -197,7 +258,7 @@ describe('MAST → Markdown 空段落', () => {
         { id: 'b_2', type: 'paragraph', content: [] },
         { id: 'b_3', type: 'paragraph', content: [] },
         { id: 'b_4', type: 'paragraph', content: [{ type: 'text', text: '下面' }] },
-      ]),
+      ])
     );
     expect(md).toBe('上面\n\n下面');
   });

@@ -4,6 +4,7 @@ import type {
   MASTBlockNode,
   MASTBlockId,
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTImageBlock,
   MASTAudioBlock,
@@ -226,8 +227,22 @@ function makeParagraph(content: MASTInlineNode[]): MASTParagraphBlock {
   return { id: newId(), type: 'paragraph', content };
 }
 
+function makeHeading(
+  level: MASTHeadingBlock['level'],
+  content: MASTInlineNode[]
+): MASTHeadingBlock {
+  return { id: newId(), type: 'heading', level, content };
+}
+
 function makeEmptyParagraph(): MASTParagraphBlock {
   return { id: newId(), type: 'paragraph', content: [] };
+}
+
+function nativeHeadingLevel(tag: string): MASTHeadingBlock['level'] | undefined {
+  if (tag === 'h1') return '1';
+  if (tag === 'h2') return '2';
+  if (tag === 'h3') return '3';
+  return undefined;
 }
 
 /**
@@ -244,16 +259,17 @@ function convertBlock(
 
   // ── 标题 ──────────────────────────────────────────────────────────────────
   if (/^h[1-6]$/.test(tag)) {
-    const level = parseInt(tag[1] ?? '1', 10);
-    // H1–H6 全部 → bold paragraph
-    const extraMarks: MASTInlineMarks = { bold: true };
-    const content = extractInlineContent(node, extraMarks);
+    const nativeLevel = nativeHeadingLevel(tag);
+    if (nativeLevel) {
+      return [makeHeading(nativeLevel, extractInlineContent(node))];
+    }
+    const level = tag[1] ?? '4';
     warnings.push({
       type: 'heading',
-      message: `H${level} 标题转换为加粗段落（墨问不支持标题层级）`,
+      message: `H${level} 标题转换为加粗段落（墨问仅支持 H1–H3, H4+ 转为加粗段落）`,
       source: tag,
     });
-    return [makeParagraph(content)];
+    return [makeParagraph(extractInlineContent(node, { bold: true }))];
   }
 
   // ── 段落 ──────────────────────────────────────────────────────────────────
@@ -326,6 +342,13 @@ function convertBlock(
       if (!isElement(child)) continue;
       const childBlocks = convertBlock(child, doc, opts, warnings);
       for (const b of childBlocks) {
+        // 墨问 quote 不能承载 heading，降为同内容段落以免丢文本
+        if (b.type === 'heading') {
+          const para = makeParagraph(b.content);
+          doc.blocks[para.id] = para;
+          childIds.push(para.id);
+          continue;
+        }
         doc.blocks[b.id] = b;
         childIds.push(b.id);
       }

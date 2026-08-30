@@ -4,6 +4,7 @@ import type {
   MASTImageBlock,
   MASTAudioBlock,
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTCodeBlock,
   MASTNoteBlock,
@@ -14,6 +15,7 @@ import type {
   NoteAtomDoc,
   NoteAtomBlockNode,
   NoteAtomParagraph,
+  NoteAtomHeading,
   NoteAtomImage,
   NoteAtomAudio,
   NoteAtomCodeBlock,
@@ -47,6 +49,8 @@ function convertBlock(block: MASTBlockNode, doc: MASTDocument): NoteAtomBlockNod
   switch (block.type) {
     case 'paragraph':
       return [convertParagraph(block)];
+    case 'heading':
+      return [convertHeading(block)];
     case 'quote':
       return [convertQuote(block, doc)];
     case 'image':
@@ -65,6 +69,14 @@ function convertBlock(block: MASTBlockNode, doc: MASTDocument): NoteAtomBlockNod
 function convertParagraph(block: MASTParagraphBlock): NoteAtomParagraph {
   return {
     type: 'paragraph',
+    content: block.content.map(convertTextRun),
+  };
+}
+
+function convertHeading(block: MASTHeadingBlock): NoteAtomHeading {
+  return {
+    type: 'heading',
+    attrs: { level: block.level },
     content: block.content.map(convertTextRun),
   };
 }

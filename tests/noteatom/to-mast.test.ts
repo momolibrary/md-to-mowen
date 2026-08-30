@@ -3,6 +3,7 @@ import { noteAtomToMast } from '../../src/noteatom/to-mast.js';
 import type { NoteAtomDoc } from '../../src/noteatom/types.js';
 import type {
   MASTParagraphBlock,
+  MASTHeadingBlock,
   MASTQuoteBlock,
   MASTImageBlock,
   MASTAudioBlock,
@@ -161,5 +162,62 @@ describe('NoteAtom → MAST 音频', () => {
     expect(audio.type).toBe('audio');
     expect(audio.uuid).toBe('mp3-001');
     expect(audio.showNote).toBe('00:00 开场');
+  });
+});
+
+describe('NoteAtom → MAST 标题', () => {
+  it('heading → MASTHeadingBlock', () => {
+    const na: NoteAtomDoc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: '1' },
+          content: [{ type: 'text', text: 'H1 标题' }],
+        },
+      ],
+    };
+    const mast = noteAtomToMast(na);
+    const h = topBlocks(mast)[0] as MASTHeadingBlock;
+    expect(h.type).toBe('heading');
+    expect(h.level).toBe('1');
+    expect(h.content[0].text).toBe('H1 标题');
+    expect(h.content[0].marks).toBeUndefined();
+  });
+
+  it('heading level "2" / "3" 原样通过', () => {
+    for (const level of ['2', '3'] as const) {
+      const na: NoteAtomDoc = {
+        type: 'doc',
+        content: [
+          {
+            type: 'heading',
+            attrs: { level },
+            content: [{ type: 'text', text: `H${level}` }],
+          },
+        ],
+      };
+      const h = topBlocks(noteAtomToMast(na))[0] as MASTHeadingBlock;
+      expect(h.type).toBe('heading');
+      expect(h.level).toBe(level);
+    }
+  });
+
+  it('未知 level "4" → 加粗段落', () => {
+    const na = {
+      type: 'doc',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: '4' },
+          content: [{ type: 'text', text: '四级' }],
+        },
+      ],
+    } as NoteAtomDoc;
+    const mast = noteAtomToMast(na);
+    const p = topBlocks(mast)[0] as MASTParagraphBlock;
+    expect(p.type).toBe('paragraph');
+    expect(p.content[0].text).toBe('四级');
+    expect(p.content[0].marks?.bold).toBe(true);
   });
 });
