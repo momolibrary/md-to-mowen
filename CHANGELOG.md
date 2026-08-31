@@ -1,3 +1,38 @@
+# [1.11.0](https://github.com/momolibrary/md-to-mowen/compare/v1.10.1...v1.11.0) (2026-08-30)
+
+
+### Features
+
+* 将 H1-H3 转为原生 heading 节点 ([#42](https://github.com/momolibrary/md-to-mowen/issues/42)) ([e748ca3](https://github.com/momolibrary/md-to-mowen/commit/e748ca32cb30a137bff5a9bb119b9a888afe639a))
+
+## [1.10.1](https://github.com/momolibrary/md-to-mowen/compare/v1.10.0...v1.10.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* 行内 code 与其它 marks 互斥，避免墨问编辑器加载失败 ([1780f90](https://github.com/momolibrary/md-to-mowen/commit/1780f90a0f9c39be8ccd557a29d6d9e02f5675ce))
+
+# [1.10.0](https://github.com/momolibrary/md-to-mowen/compare/v1.9.2...v1.10.0) (2026-07-10)
+
+
+### Features
+
+* 新增 whoami 命令验证登录状态 ([f20420d](https://github.com/momolibrary/md-to-mowen/commit/f20420df1b2024c45abcfe23d14817e93e11b9e4))
+
+## [1.9.2](https://github.com/momolibrary/md-to-mowen/compare/v1.9.1...v1.9.2) (2026-07-10)
+
+
+### Bug Fixes
+
+* 修复 quote 引用块在墨问编辑器渲染失败 ([d79f7e7](https://github.com/momolibrary/md-to-mowen/commit/d79f7e7584a02323c96a06ebd1235ff797eb78b2)), closes [#36](https://github.com/momolibrary/md-to-mowen/issues/36)
+
+## [1.9.1](https://github.com/momolibrary/md-to-mowen/compare/v1.9.0...v1.9.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* 修复 codeblock 发布时 [400] CODEC 错误 ([00850c1](https://github.com/momolibrary/md-to-mowen/commit/00850c1c8e1a461e0e81c1c0741cf5cb8b5f3f39))
+
 # [1.9.0](https://github.com/momolibrary/md-to-mowen/compare/v1.8.3...v1.9.0) (2026-06-29)
 
 
