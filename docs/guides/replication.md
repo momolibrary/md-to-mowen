@@ -199,8 +199,7 @@ md-to-mowen config
 ```json
 {
   "defaultTags": "tech,programming",
-  "autoPublish": false,
-  "codeBlockStyle": "paragraph"
+  "autoPublish": false
 }
 ```
 

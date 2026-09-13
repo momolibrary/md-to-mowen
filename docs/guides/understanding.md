@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-**md-to-mowen** 是一个 TypeScript CLI 工具，将 Markdown（GFM）转换为墨问笔记。它的核心价值是解决墨问笔记格式的限制——墨问不支持原生标题、表格、代码块，本项目通过 AST 转换流水线将这些元素适配到墨问的格式。
+**md-to-mowen** 是一个 TypeScript CLI 工具，将 Markdown（GFM）转换为墨问笔记。H1–H3 映射为原生 `heading`。围栏代码块映射为原生 `codeblock`。表格仍不原生，流水线把它渲染成图片后再插入。
 
 ## 流水线架构
 
@@ -100,16 +100,16 @@ MAST 的结构镜像 NoteAtom，但增加了：
 
 NoteAtom 是墨问的 ProseMirror 风格文档格式。
 
-### 核心限制
+### 格式对照
 
-墨问笔记格式有以下限制：
+墨问格式与本工具的映射如下：
 
-| 限制         | 解决方案                                       |
-| ------------ | ---------------------------------------------- |
-| 无原生标题   | H1-H6 → `paragraph` + `bold` 标记              |
-| 无原生列表   | 列表项 → 带 `• ` 或 `1. ` 前缀的 `paragraph`   |
-| 无原生代码块 | 每行带 `code` 标记的 `paragraph`，或渲染为图片 |
-| 无原生表格   | 渲染为 PNG 图片，作为 `image` 节点插入         |
+| 项目       | 映射                                                                                    |
+| ---------- | --------------------------------------------------------------------------------------- |
+| 标题       | H1–H3 → `heading`（`attrs.level` 为 `"1"` / `"2"` / `"3"`）。H4+ → `paragraph` + `bold` |
+| 无原生列表 | 列表项 → 带 `• ` 或 `1. ` 前缀的 `paragraph`                                            |
+| 围栏代码块 | 映射为原生 `codeblock`（`attrs.language`，`content` 为文本节点）                        |
+| 无原生表格 | 渲染为 PNG 图片，作为 `image` 节点插入                                                  |
 
 ### NoteAtom 结构
 
@@ -121,6 +121,7 @@ interface NoteAtomDoc {
 
 type NoteAtomBlockNode =
   | { type: 'paragraph'; content: NoteAtomTextNode[] }
+  | { type: 'heading'; attrs: { level: '1' | '2' | '3' }; content: NoteAtomTextNode[] }
   | { type: 'quote'; content: NoteAtomTextNode[] }
   | { type: 'image'; attrs: { uuid: string; alt: string; align: string } }
   | { type: 'audio'; attrs: { uuid: string; showNote: string } }
@@ -154,16 +155,13 @@ type NoteAtomMark =
 
 墨问不支持表格。与其静默丢弃，渲染为图片效果更好。
 
-### D4: 代码块可配置
+### D4: 围栏代码块映射为 `codeblock`
 
-通过 `--code-block-style` 选择：
+围栏代码块始终映射为 `codeblock`。`--code-block-style` 已移除。
 
-- `paragraph` — 每行带 code 标记的段落
-- `codeblock` — 使用墨问原生代码块节点
+### D5: H1–H3 保留层级
 
-### D5: 标题层级展平
-
-H1-H6 全部转为粗体段落，这是已知的有损映射。反向转换无法恢复层级。
+H1–H3 映射为 `heading`。反向转换还原为 `#` / `##` / `###`。H4+ 仍变成加粗段落，无法恢复层级。
 
 ### D6: 保留链接标记
 

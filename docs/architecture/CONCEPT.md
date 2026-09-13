@@ -44,11 +44,23 @@ interface NoteAtomDoc {
 ### 块节点类型
 
 ```typescript
-type NoteAtomBlockNode = NoteAtomParagraph | NoteAtomQuote | NoteAtomImage;
+type NoteAtomBlockNode =
+  | NoteAtomParagraph
+  | NoteAtomHeading
+  | NoteAtomQuote
+  | NoteAtomImage
+  | NoteAtomCodeBlock;
 
 // Paragraph：通用文本容器
 interface NoteAtomParagraph {
   type: 'paragraph';
+  content: NoteAtomTextNode[];
+}
+
+// Heading：H1–H3。attrs.level 是字符串 "1" / "2" / "3"
+interface NoteAtomHeading {
+  type: 'heading';
+  attrs: { level: '1' | '2' | '3' };
   content: NoteAtomTextNode[];
 }
 
@@ -66,6 +78,15 @@ interface NoteAtomImage {
     alt: string;
     align: 'left' | 'center' | 'right';
   };
+}
+
+// CodeBlock：围栏代码块
+interface NoteAtomCodeBlock {
+  type: 'codeblock';
+  attrs: {
+    language: string;
+  };
+  content: NoteAtomTextNode[];
 }
 ```
 
@@ -90,9 +111,9 @@ type NoteAtomMark =
 
 ### 关键约束
 
-1. **无原生标题** — H1–H6 全部映射为 `paragraph` + `bold` 标记
+1. **H1–H3 用 `heading`。** H1–H3 映射为 `heading`，`attrs.level` 为 `"1"` / `"2"` / `"3"`。H4+ 仍映射为 `paragraph` + `bold` 标记。
 2. **无原生列表** — 列表项映射为带 `• ` 或 `N. ` 前缀文本的 `paragraph`
-3. **无原生代码块** — 围栏代码块映射为每行带 `code` 标记的 `paragraph` 节点，或渲染为图片
+3. **围栏代码块用 `codeblock`。** 围栏代码块映射为 `codeblock`（`attrs.language`，`content` 为文本节点）。
 4. **无原生表格** — 表格必须渲染为 PNG 并作为 `image` 节点插入
 5. **无原生分隔线** — `---` 映射为空 `paragraph`
 
@@ -102,10 +123,10 @@ type NoteAtomMark =
 
 | Markdown 元素          | NoteAtom 输出                  | 备注                   |
 | ---------------------- | ------------------------------ | ---------------------- |
-| `# H1`                 | `paragraph` + `bold` 标记      | 标题层级丢失           |
-| `## H2`                | `paragraph` + `bold` 标记      |                        |
-| `### H3`               | `paragraph` + `bold` 标记      |                        |
-| `#### H4+`             | `paragraph` + `bold` 标记      |                        |
+| `# H1`                 | `heading`，`attrs.level` `"1"` |                        |
+| `## H2`                | `heading`，`attrs.level` `"2"` |                        |
+| `### H3`               | `heading`，`attrs.level` `"3"` |                        |
+| `#### H4+`             | `paragraph` + `bold` 标记      | 编辑器无 H4+           |
 | `- item`               | 带 `• ` 前缀的 `paragraph`     | 嵌套列表：缩进前缀     |
 | `1. item`              | 带 `1. ` 前缀的 `paragraph`    | 每个列表独立计数       |
 | `> quote`              | `quote` 节点                   | 嵌套引用：展平处理     |
@@ -115,7 +136,7 @@ type NoteAtomMark =
 | `~~strike~~`           | `text` + `strikethrough` 标记  |                        |
 | `[text](url)`          | `text` + `link` 标记           |                        |
 | `![alt](src)`          | `image` 节点                   | 需先上传               |
-| ` ```lang\ncode\n``` ` | 每行 `paragraph` + `code` 标记 | 或渲染为图片           |
+| ` ```lang\ncode\n``` ` | `codeblock`                    | `attrs.language`       |
 | `\| table \|`          | `image` 节点                   | Playwright 渲染 → 上传 |
 | `---`                  | 空 `paragraph`                 |                        |
 | 空行                   | 空 `paragraph`                 |                        |
@@ -415,13 +436,13 @@ MOWEN_API_KEY=your_api_key_here
 
 墨问不支持表格。与其静默丢弃，不如始终渲染为图片。这与现有 skill 的行为一致，输出效果更好。
 
-### D4：代码块作为样式化段落
+### D4：围栏代码块映射为 `codeblock`
 
-围栏代码块映射为一系列 `paragraph` 节点，每行带 `code` 标记。这保留了内容（而非丢弃）。另一种方案是渲染为图片——通过 `--code-block-style paragraph|image` 使其可配置。
+围栏代码块映射为 `codeblock`。`attrs.language` 来自围栏语言标记。`content` 是文本节点。
 
-### D5：标题层级展平
+### D5：H1–H3 保留层级
 
-H1–H6 全部 → 粗体段落。这是已知的有损映射，需明确记录。反向转换（NoteAtom → Markdown）无法恢复标题层级。
+H1–H3 映射为 `heading`。反向 `to-markdown` 还原为 `#` / `##` / `###`。H4+ 仍变成加粗段落，无法恢复层级。
 
 ### D6：保留链接标记
 

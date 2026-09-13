@@ -21,7 +21,7 @@ interface NoteAtomDoc {
 
 ## 块节点（Block Nodes）
 
-块节点是文档的顶层内容单元，目前支持三种类型：
+块节点是文档的顶层内容单元，包括 `paragraph`、`heading`、`quote`、`image`、`codeblock` 等。
 
 ### paragraph（段落）
 
@@ -34,6 +34,20 @@ interface NoteAtomParagraph {
 
 - 最通用的块类型，承载文本和行内格式
 - `content` 可为空数组（空段落）
+
+### heading（标题）
+
+```typescript
+interface NoteAtomHeading {
+  type: 'heading';
+  attrs: { level: '1' | '2' | '3' };
+  content: NoteAtomTextNode[];
+}
+```
+
+- `attrs.level` 是字符串 `"1"` / `"2"` / `"3"`，不是数字
+- `content` 是行内文本节点，不含嵌套 `paragraph`
+- 仅 H1–H3。H4+ 见下方映射表
 
 ### quote（引用块）
 
@@ -68,7 +82,7 @@ interface NoteAtomImage {
 
 ## 行内节点（Inline Nodes）
 
-行内节点只能出现在 `paragraph.content` 中。
+行内节点出现在 `paragraph`、`heading`、`quote`、`codeblock` 的 `content` 中。
 
 ### text（文本）
 
@@ -115,12 +129,13 @@ type NoteAtomMark =
 > 以下结构来自墨问官方 API 文档 NoteAtom 示例（<https://mowen.apifox.cn/6682171m0>，2025-06-10）。
 > 墨问块节点的「行内内容」统一用 `text` 节点数组表达，**不要套 `paragraph`**。
 
-| 节点                         | content 类型           | 说明                                            |
-| ---------------------------- | ---------------------- | ----------------------------------------------- |
-| `paragraph`                  | `NoteAtomTextNode[]`   | 行内文本                                        |
-| `quote`                      | `NoteAtomTextNode[]`   | 行内文本，多段用 `{type:'text',text:'\n'}` 分隔 |
-| `codeblock`                  | `NoteAtomTextNode[]`   | 代码文本（`[{type:'text',text:code}]`）         |
-| `image`/`audio`/`note`/`pdf` | 无 content，用 `attrs` | 资源型节点                                      |
+| 节点                         | content 类型           | 说明                                             |
+| ---------------------------- | ---------------------- | ------------------------------------------------ |
+| `paragraph`                  | `NoteAtomTextNode[]`   | 行内文本                                         |
+| `heading`                    | `NoteAtomTextNode[]`   | 行内文本，`attrs.level` 为 `"1"` / `"2"` / `"3"` |
+| `quote`                      | `NoteAtomTextNode[]`   | 行内文本，多段用 `{type:'text',text:'\n'}` 分隔  |
+| `codeblock`                  | `NoteAtomTextNode[]`   | 代码文本（`[{type:'text',text:code}]`）          |
+| `image`/`audio`/`note`/`pdf` | 无 content，用 `attrs` | 资源型节点                                       |
 
 历史教训：`quote` 与 `codeblock` 都曾误把 `content` 写成块/字符串结构，导致墨问编辑器加载报「不支持的格式」（见 git `00850c1` codeblock 修复、本次 quote 修复）。
 
@@ -130,14 +145,14 @@ type NoteAtomMark =
 
 官方 NoteAtom 模型见 [NoteAtom](https://mowen.apifox.cn/167993166d0)，结构说明见 [2. NoteAtom 的结构说明](https://mowen.apifox.cn/6682171m0)。`heading` 是 block。`attrs.level` 可选值是字符串 `1`、`2`、`3`。页面上的 JSON 举例尚未包含 heading 节点。
 
-墨问不支持以下原生格式，需在转换时处理：
+Markdown 到 NoteAtom 的映射：
 
 | 原生格式         | 处理方式                                                    |
 | ---------------- | ----------------------------------------------------------- |
 | 标题（H1/H2/H3） | 原生 `heading` 节点，`attrs.level` 为 `"1"` / `"2"` / `"3"` |
 | 标题（H4+）      | `paragraph` + `bold` 标记（墨问仅支持 H1–H3）               |
 | 有序/无序列表    | `paragraph` + 文本前缀（`• ` 或 `1. `）                     |
-| 代码块           | 每行一个 `paragraph`，文本带 `code` 标记                    |
+| 代码块           | 原生 `codeblock`（`attrs.language`，`content` 为文本节点）  |
 | 表格             | 渲染为图片后作为 `image` 节点插入                           |
 | 分隔线 `---`     | 空 `paragraph`                                              |
 | 空行             | 空 `paragraph`                                              |
@@ -151,8 +166,9 @@ type NoteAtomMark =
   "type": "doc",
   "content": [
     {
-      "type": "paragraph",
-      "content": [{ "type": "text", "text": "标题文字", "marks": [{ "type": "bold" }] }]
+      "type": "heading",
+      "attrs": { "level": "1" },
+      "content": [{ "type": "text", "text": "标题文字" }]
     },
     {
       "type": "paragraph",
