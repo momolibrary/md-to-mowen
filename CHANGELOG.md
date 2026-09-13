@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/momolibrary/md-to-mowen/compare/v1.11.0...v1.11.1) (2026-09-13)
+
+
+### Bug Fixes
+
+* 行内 code 不再叠 highlight ([889a155](https://github.com/momolibrary/md-to-mowen/commit/889a155e24055f74ac71edd5182a0b838a5bf013))
+
 # [1.11.0](https://github.com/momolibrary/md-to-mowen/compare/v1.10.1...v1.11.0) (2026-08-30)
 
 
