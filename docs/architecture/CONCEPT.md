@@ -466,7 +466,9 @@ MAST → Markdown (src/mast/to-markdown.ts)
 
 | NoteAtom                   | MAST                              |
 | -------------------------- | --------------------------------- |
-| `paragraph` + `bold` 文本  | `paragraph`（标题层级丢失）       |
+| `heading`                  | `heading`（`level` 保留）         |
+| `codeblock`                | `codeblock`                       |
+| `paragraph` + `bold` 文本  | `paragraph`（H4+ 标题层级丢失）   |
 | 带 `• ` 前缀的 `paragraph` | `paragraph`（列表标记保留为文本） |
 | `quote`                    | `quote`                           |
 | `image`                    | 带 uuid 的 `image`（无本地 src）  |
@@ -475,6 +477,8 @@ MAST → Markdown (src/mast/to-markdown.ts)
 
 | MAST                       | Markdown                               |
 | -------------------------- | -------------------------------------- |
+| `heading`                  | `#` / `##` / `###` + 文本              |
+| `codeblock`                | 围栏 ` ```lang `                       |
 | `paragraph`                | `\n\ntext\n\n`                         |
 | `quote`                    | `> text`                               |
 | `image`（有 uuid，无 src） | `![alt](https://mowen.cn/file/{uuid})` |

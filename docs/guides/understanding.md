@@ -157,7 +157,7 @@ type NoteAtomMark =
 
 ### D4: 围栏代码块映射为 `codeblock`
 
-围栏代码块始终映射为 `codeblock`。`--code-block-style` 已移除。
+围栏代码块始终映射为 `codeblock`。
 
 ### D5: H1–H3 保留层级
 
