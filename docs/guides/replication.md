@@ -199,8 +199,7 @@ md-to-mowen config
 ```json
 {
   "defaultTags": "tech,programming",
-  "autoPublish": false,
-  "codeBlockStyle": "paragraph"
+  "autoPublish": false
 }
 ```
 
@@ -259,11 +258,11 @@ Markdown → HAST → 中间 AST → BTT → 飞书 API
 
 关键差异：
 
-| 墨问         | 飞书           |
-| ------------ | -------------- |
-| 无原生表格   | 支持原生表格   |
-| 无原生代码块 | 支持原生代码块 |
-| 简单标记     | 复杂标记系统   |
+| 墨问             | 飞书           |
+| ---------------- | -------------- |
+| 无原生表格       | 支持原生表格   |
+| 原生 `codeblock` | 支持原生代码块 |
+| 简单标记         | 复杂标记系统   |
 
 ### Notion
 
